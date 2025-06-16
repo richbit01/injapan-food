@@ -1,64 +1,65 @@
 
-import { Suspense, lazy } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
-
-const queryClient = new QueryClient();
-
-// Lazy load pages
-const Index = lazy(() => import("./pages/Index"));
-const Auth = lazy(() => import("./pages/Auth"));
-const Products = lazy(() => import("./pages/Products"));
-const ProductDetail = lazy(() => import("./pages/ProductDetail"));
-const Cart = lazy(() => import("./pages/Cart"));
-const HowToBuy = lazy(() => import("./pages/HowToBuy"));
-const Orders = lazy(() => import("./pages/Orders"));
-const NotFound = lazy(() => import("./pages/NotFound"));
+import Index from "./pages/Index";
+import Products from "./pages/Products";
+import ProductDetail from "./pages/ProductDetail";
+import Cart from "./pages/Cart";
+import Orders from "./pages/Orders";
+import Auth from "./pages/Auth";
+import HowToBuy from "./pages/HowToBuy";
+import NotFound from "./pages/NotFound";
 
 // Admin pages
-const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
-const ProductsList = lazy(() => import("./pages/admin/ProductsList"));
-const AddProduct = lazy(() => import("./pages/admin/AddProduct"));
-const EditProduct = lazy(() => import("./pages/admin/EditProduct"));
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import ProductsList from "./pages/admin/ProductsList";
+import AddProduct from "./pages/admin/AddProduct";
+import EditProduct from "./pages/admin/EditProduct";
+import OrdersHistory from "./pages/admin/OrdersHistory";
+import ImportExport from "./pages/admin/ImportExport";
+import RecycleBin from "./pages/admin/RecycleBin";
+import AdminLogs from "./pages/admin/AdminLogs";
+
+const queryClient = new QueryClient();
 
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <AuthProvider>
+      <AuthProvider>
+        <TooltipProvider>
           <Toaster />
           <Sonner />
           <BrowserRouter>
-            <Suspense fallback={
-              <div className="min-h-screen flex items-center justify-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-              </div>
-            }>
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/auth" element={<Auth />} />
-                <Route path="/products" element={<Products />} />
-                <Route path="/product/:id" element={<ProductDetail />} />
-                <Route path="/cart" element={<Cart />} />
-                <Route path="/how-to-buy" element={<HowToBuy />} />
-                <Route path="/orders" element={<Orders />} />
-                
-                {/* Admin Routes */}
-                <Route path="/admin" element={<AdminDashboard />} />
-                <Route path="/admin/products" element={<ProductsList />} />
-                <Route path="/admin/products/new" element={<AddProduct />} />
-                <Route path="/admin/products/edit/:id" element={<EditProduct />} />
-                
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </Suspense>
+            <Routes>
+              {/* Public Routes */}
+              <Route path="/" element={<Index />} />
+              <Route path="/products" element={<Products />} />
+              <Route path="/products/:id" element={<ProductDetail />} />
+              <Route path="/cart" element={<Cart />} />
+              <Route path="/orders" element={<Orders />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/how-to-buy" element={<HowToBuy />} />
+              
+              {/* Admin Routes */}
+              <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/admin/products" element={<ProductsList />} />
+              <Route path="/admin/products/add" element={<AddProduct />} />
+              <Route path="/admin/products/edit/:id" element={<EditProduct />} />
+              <Route path="/admin/orders" element={<OrdersHistory />} />
+              <Route path="/admin/import-export" element={<ImportExport />} />
+              <Route path="/admin/recycle-bin" element={<RecycleBin />} />
+              <Route path="/admin/logs" element={<AdminLogs />} />
+              
+              {/* 404 Route */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
           </BrowserRouter>
-        </AuthProvider>
-      </TooltipProvider>
+        </TooltipProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

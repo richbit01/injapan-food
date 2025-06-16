@@ -27,7 +27,11 @@ export const useAdminStats = () => {
         console.error('Error fetching orders count:', ordersError);
       }
 
-      const productsList = products || [];
+      const productsList = (products || []).map(p => ({
+        ...p,
+        status: p.status as 'active' | 'inactive' | 'out_of_stock',
+        variants: Array.isArray(p.variants) ? p.variants : []
+      })) as Product[];
       
       const totalProducts = productsList.length;
       const activeProducts = productsList.filter(p => p.status === 'active').length;

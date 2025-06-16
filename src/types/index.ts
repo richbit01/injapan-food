@@ -10,6 +10,7 @@ export interface Product {
   status: 'active' | 'inactive' | 'out_of_stock';
   variants?: ProductVariant[];
   created_at?: string;
+  updated_at?: string;
 }
 
 export interface ProductVariant {

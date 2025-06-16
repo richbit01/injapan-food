@@ -17,7 +17,11 @@ export const useProducts = () => {
         throw error;
       }
 
-      return data || [];
+      return (data || []).map(product => ({
+        ...product,
+        status: product.status as 'active' | 'inactive' | 'out_of_stock',
+        variants: Array.isArray(product.variants) ? product.variants : []
+      }));
     },
   });
 };
@@ -42,7 +46,11 @@ export const useProduct = (id: string) => {
         throw error;
       }
 
-      return data;
+      return {
+        ...data,
+        status: data.status as 'active' | 'inactive' | 'out_of_stock',
+        variants: Array.isArray(data.variants) ? data.variants : []
+      };
     },
     enabled: !!id,
   });
