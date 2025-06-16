@@ -20,8 +20,8 @@ const ProductCard = ({ product, onAddToCart }: ProductCardProps) => {
   };
 
   return (
-    <Link to={`/products/${product.id}`}>
-      <div ref={cardRef} className="card-product p-4 h-full transition-all duration-200 hover:scale-105 hover:shadow-lg">
+    <div ref={cardRef} className="card-product p-4 h-full">
+      <Link to={`/products/${product.id}`} className="block transition-all duration-200 hover:scale-105 hover:shadow-lg">
         <div className="relative overflow-hidden rounded-lg mb-4">
           <img
             src={product.image_url || '/placeholder.svg'}
@@ -46,26 +46,11 @@ const ProductCard = ({ product, onAddToCart }: ProductCardProps) => {
           <h3 className="font-semibold text-lg mb-2 line-clamp-2">{product.name}</h3>
           <p className="text-gray-600 text-sm mb-3 line-clamp-2">{product.description}</p>
           
-          <div className="flex items-center justify-between mb-2">
-            <div className="text-xl font-bold text-primary">
-              {formatPrice(product.price)}
-            </div>
-            
-            <div onClick={(e) => e.preventDefault()}>
-              <AddToCartButton
-                product={product}
-                className={`px-2 py-1 text-xs flex items-center space-x-1 rounded-lg transition-colors ${
-                  product.stock === 0 
-                    ? 'bg-gray-400 text-white cursor-not-allowed'
-                    : 'btn-primary'
-                }`}
-                onAddToCart={handleAddToCart}
-                disabled={product.stock === 0}
-              />
-            </div>
+          <div className="text-xl font-bold text-primary mb-2">
+            {formatPrice(product.price)}
           </div>
           
-          <div>
+          <div className="mb-3">
             <span className={`text-xs px-2 py-1 rounded-full ${
               product.stock > 10 
                 ? 'bg-green-100 text-green-800' 
@@ -77,8 +62,22 @@ const ProductCard = ({ product, onAddToCart }: ProductCardProps) => {
             </span>
           </div>
         </div>
+      </Link>
+      
+      {/* Add to Cart Button Outside Link */}
+      <div className="mt-3" onClick={(e) => e.stopPropagation()}>
+        <AddToCartButton
+          product={product}
+          className={`w-full py-2 text-sm flex items-center justify-center space-x-2 rounded-lg transition-colors ${
+            product.stock === 0 
+              ? 'bg-gray-400 text-white cursor-not-allowed'
+              : 'btn-primary'
+          }`}
+          onAddToCart={handleAddToCart}
+          disabled={product.stock === 0}
+        />
       </div>
-    </Link>
+    </div>
   );
 };
 
