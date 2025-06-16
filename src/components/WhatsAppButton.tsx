@@ -1,11 +1,24 @@
 
 import { Phone } from 'lucide-react';
-import { useCart } from '@/hooks/useCart';
 import { Button } from '@/components/ui/button';
+import { CartItem } from '@/types';
+import { formatPrice } from '@/utils/cart';
 
-const WhatsAppButton = () => {
-  const { cart, total } = useCart();
+interface WhatsAppButtonProps {
+  cart: CartItem[];
+  total: number;
+  customerInfo: {
+    name: string;
+    prefecture: string;
+    postal_code: string;
+    address: string;
+    phone: string;
+    notes: string;
+  };
+  onSuccess: () => void;
+}
 
+const WhatsAppButton = ({ cart, total, customerInfo, onSuccess }: WhatsAppButtonProps) => {
   const handleWhatsAppOrder = () => {
     if (cart.length === 0) {
       alert('Keranjang kosong! Silakan tambahkan produk terlebih dahulu.');
@@ -21,23 +34,42 @@ const WhatsAppButton = () => {
     }));
 
     const orderText = orderItems
-      .map(item => `${item.name} - ${item.quantity}x - ¥${item.price}`)
+      .map(item => `${item.name} - ${item.quantity}x - ${formatPrice(item.price)}`)
       .join('\n');
 
-    const message = `Halo! Saya ingin memesan:\n\n${orderText}\n\nTotal: ¥${total}\n\nTerima kasih!`;
+    const customerDetails = `
+Nama: ${customerInfo.name}
+Prefektur: ${customerInfo.prefecture}
+Kode Pos: ${customerInfo.postal_code}
+Alamat: ${customerInfo.address}
+No HP: ${customerInfo.phone}
+${customerInfo.notes ? `Catatan: ${customerInfo.notes}` : ''}`;
+
+    const message = `Halo! Saya ingin memesan:
+
+${orderText}
+
+Total: ${formatPrice(total)}
+
+Informasi Pengiriman:${customerDetails}
+
+Terima kasih!`;
     
     const whatsappUrl = `https://wa.me/81234567890?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
+    
+    // Call onSuccess callback to clear cart and reset form
+    onSuccess();
   };
 
   return (
     <Button
       onClick={handleWhatsAppOrder}
-      className="fixed bottom-4 right-4 z-50 bg-green-500 hover:bg-green-600 text-white rounded-full p-4 shadow-lg"
+      className="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-4 px-6 rounded-lg"
       size="lg"
     >
-      <Phone className="w-6 h-6 mr-2" />
-      Order via WhatsApp
+      <Phone className="w-5 h-5 mr-2" />
+      Pesan via WhatsApp
     </Button>
   );
 };
