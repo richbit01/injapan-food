@@ -21,13 +21,25 @@ const AuthForm = () => {
     setLoading(true);
 
     try {
+      console.log('Attempting to sign in with email:', email);
       const { error } = await signIn(email, password);
       if (error) {
+        console.error('Sign in error:', error);
+        let errorMessage = "Terjadi kesalahan saat masuk.";
+        
+        if (error.message === "Invalid login credentials") {
+          errorMessage = "Email atau password salah. Silakan coba lagi.";
+        } else if (error.message.includes("email_address_invalid")) {
+          errorMessage = "Format email tidak valid. Silakan gunakan email yang benar.";
+        } else if (error.message.includes("Email address")) {
+          errorMessage = "Email tidak valid atau tidak terdaftar.";
+        } else {
+          errorMessage = error.message;
+        }
+        
         toast({
           title: "Error",
-          description: error.message === "Invalid login credentials" 
-            ? "Email atau password salah. Silakan coba lagi."
-            : error.message,
+          description: errorMessage,
           variant: "destructive",
         });
       } else {
@@ -35,9 +47,9 @@ const AuthForm = () => {
           title: "Berhasil!",
           description: "Anda berhasil masuk.",
         });
-        window.location.href = '/';
       }
     } catch (error) {
+      console.error('Sign in catch error:', error);
       toast({
         title: "Error",
         description: "Terjadi kesalahan saat masuk.",
@@ -53,21 +65,27 @@ const AuthForm = () => {
     setLoading(true);
 
     try {
+      console.log('Attempting to sign up with email:', email);
       const { error } = await signUp(email, password, fullName);
       if (error) {
+        console.error('Sign up error:', error);
+        let errorMessage = "Terjadi kesalahan saat mendaftar.";
+        
         if (error.message.includes("already registered")) {
-          toast({
-            title: "Error",
-            description: "Email sudah terdaftar. Silakan gunakan email lain atau masuk.",
-            variant: "destructive",
-          });
+          errorMessage = "Email sudah terdaftar. Silakan gunakan email lain atau masuk.";
+        } else if (error.message.includes("email_address_invalid")) {
+          errorMessage = "Format email tidak valid. Silakan gunakan email yang benar (contoh: nama@gmail.com).";
+        } else if (error.message.includes("Email address")) {
+          errorMessage = "Email tidak valid. Silakan gunakan email yang benar.";
         } else {
-          toast({
-            title: "Error",
-            description: error.message,
-            variant: "destructive",
-          });
+          errorMessage = error.message;
         }
+        
+        toast({
+          title: "Error",
+          description: errorMessage,
+          variant: "destructive",
+        });
       } else {
         toast({
           title: "Berhasil!",
@@ -75,6 +93,7 @@ const AuthForm = () => {
         });
       }
     } catch (error) {
+      console.error('Sign up catch error:', error);
       toast({
         title: "Error",
         description: "Terjadi kesalahan saat mendaftar.",
@@ -94,6 +113,16 @@ const AuthForm = () => {
           </div>
           <h2 className="text-3xl font-bold text-gray-900">Injapan Food</h2>
           <p className="mt-2 text-sm text-gray-600">Makanan Indonesia di Jepang</p>
+        </div>
+
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+          <h3 className="text-sm font-semibold text-yellow-800 mb-2">Untuk Testing Admin:</h3>
+          <p className="text-xs text-yellow-700 mb-2">
+            Silakan buat akun baru dengan email yang valid (contoh: admin@gmail.com)
+          </p>
+          <p className="text-xs text-yellow-600">
+            Setelah membuat akun, Anda dapat mengakses fitur admin di menu profil.
+          </p>
         </div>
 
         <Tabs defaultValue="signin" className="w-full">
@@ -120,7 +149,7 @@ const AuthForm = () => {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
-                      placeholder="nama@email.com"
+                      placeholder="admin@gmail.com"
                     />
                   </div>
                   <div>
@@ -175,7 +204,7 @@ const AuthForm = () => {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       required
-                      placeholder="nama@email.com"
+                      placeholder="admin@gmail.com"
                     />
                   </div>
                   <div>
