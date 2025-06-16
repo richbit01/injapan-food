@@ -118,7 +118,7 @@ const Products = () => {
         {/* Category Overview */}
         {selectedCategory !== 'all' && (
           <div className="mb-8 p-6 bg-white rounded-lg shadow-md border-l-4 border-primary">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Kategori: {selectedCategory}</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Berdasarkan Kategori: {selectedCategory}</h2>
             <p className="text-gray-600">
               Menampilkan {filteredProducts.length} produk dalam kategori "{selectedCategory}"
             </p>
@@ -127,14 +127,21 @@ const Products = () => {
 
         {/* Products Grid - Updated responsive layout */}
         {filteredProducts.length > 0 ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 gap-y-6 px-4">
-            {filteredProducts.map((product) => (
-              <ProductCard 
-                key={product.id} 
-                product={product} 
-                onAddToCart={handleAddToCart}
-              />
-            ))}
+          <div>
+            {selectedCategory !== 'all' && (
+              <h3 className="text-xl font-semibold text-gray-800 mb-6 text-center">
+                Produk Berdasarkan Kategori
+              </h3>
+            )}
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 gap-y-6 px-4">
+              {filteredProducts.map((product) => (
+                <ProductCard 
+                  key={product.id} 
+                  product={product} 
+                  onAddToCart={handleAddToCart}
+                />
+              ))}
+            </div>
           </div>
         ) : (
           <div className="text-center py-16">
