@@ -1,6 +1,7 @@
 
 import { LogOut, User, ShoppingBag } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,11 +14,16 @@ import { Button } from '@/components/ui/button';
 
 const UserMenu = () => {
   const { user, signOut } = useAuth();
+  const navigate = useNavigate();
 
   if (!user) return null;
 
   const handleSignOut = async () => {
     await signOut();
+  };
+
+  const handleOrdersClick = () => {
+    navigate('/orders');
   };
 
   return (
@@ -36,7 +42,7 @@ const UserMenu = () => {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem>
+        <DropdownMenuItem onClick={handleOrdersClick}>
           <ShoppingBag className="mr-2 h-4 w-4" />
           <span>Pesanan Saya</span>
         </DropdownMenuItem>
