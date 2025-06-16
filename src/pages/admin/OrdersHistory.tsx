@@ -21,7 +21,7 @@ import AdminLayout from '@/components/admin/AdminLayout';
 
 const OrdersHistory = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
 
   const { data: orders = [], isLoading } = useQuery({
     queryKey: ['orders-history'],
@@ -38,7 +38,7 @@ const OrdersHistory = () => {
 
       return (data || []).map(order => ({
         ...order,
-        items: Array.isArray(order.items) ? order.items as OrderItem[] : [],
+        items: Array.isArray(order.items) ? order.items as unknown as OrderItem[] : [],
         status: order.status as 'pending' | 'processing' | 'completed' | 'cancelled'
       }));
     },
@@ -48,7 +48,7 @@ const OrdersHistory = () => {
     const matchesSearch = order.customer_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          order.customer_email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          order.id.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = !statusFilter || order.status === statusFilter;
+    const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
@@ -121,7 +121,7 @@ const OrdersHistory = () => {
                   <SelectValue placeholder="Filter Status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Semua Status</SelectItem>
+                  <SelectItem value="all">Semua Status</SelectItem>
                   <SelectItem value="pending">Pending</SelectItem>
                   <SelectItem value="processing">Processing</SelectItem>
                   <SelectItem value="completed">Completed</SelectItem>

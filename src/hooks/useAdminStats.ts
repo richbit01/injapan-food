@@ -1,7 +1,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { DashboardStats, Product } from '@/types';
+import { DashboardStats, Product, ProductVariant } from '@/types';
 
 export const useAdminStats = () => {
   return useQuery({
@@ -30,7 +30,9 @@ export const useAdminStats = () => {
       const productsList = (products || []).map(p => ({
         ...p,
         status: p.status as 'active' | 'inactive' | 'out_of_stock',
-        variants: Array.isArray(p.variants) ? p.variants : []
+        variants: Array.isArray(p.variants) 
+          ? (p.variants as unknown as ProductVariant[])
+          : []
       })) as Product[];
       
       const totalProducts = productsList.length;

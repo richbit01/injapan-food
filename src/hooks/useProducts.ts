@@ -1,7 +1,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Product } from '@/types';
+import { Product, ProductVariant } from '@/types';
 
 export const useProducts = () => {
   return useQuery({
@@ -20,7 +20,9 @@ export const useProducts = () => {
       return (data || []).map(product => ({
         ...product,
         status: product.status as 'active' | 'inactive' | 'out_of_stock',
-        variants: Array.isArray(product.variants) ? product.variants : []
+        variants: Array.isArray(product.variants) 
+          ? (product.variants as unknown as ProductVariant[])
+          : []
       }));
     },
   });
@@ -49,7 +51,9 @@ export const useProduct = (id: string) => {
       return {
         ...data,
         status: data.status as 'active' | 'inactive' | 'out_of_stock',
-        variants: Array.isArray(data.variants) ? data.variants : []
+        variants: Array.isArray(data.variants) 
+          ? (data.variants as unknown as ProductVariant[])
+          : []
       };
     },
     enabled: !!id,
