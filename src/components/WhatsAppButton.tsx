@@ -4,18 +4,18 @@ import { useCart } from '@/hooks/useCart';
 import { Button } from '@/components/ui/button';
 
 const WhatsAppButton = () => {
-  const { items, getTotalPrice } = useCart();
+  const { cart, total } = useCart();
 
   const handleWhatsAppOrder = () => {
-    if (items.length === 0) {
+    if (cart.length === 0) {
       alert('Keranjang kosong! Silakan tambahkan produk terlebih dahulu.');
       return;
     }
 
     // Format order details for WhatsApp
-    const orderItems = items.map(item => ({
+    const orderItems = cart.map(item => ({
       product_id: item.product.id,
-      name: item.product.name, // Changed from product_name to name
+      name: item.product.name,
       quantity: item.quantity,
       price: item.product.price
     }));
@@ -24,8 +24,7 @@ const WhatsAppButton = () => {
       .map(item => `${item.name} - ${item.quantity}x - ¥${item.price}`)
       .join('\n');
 
-    const totalPrice = getTotalPrice();
-    const message = `Halo! Saya ingin memesan:\n\n${orderText}\n\nTotal: ¥${totalPrice}\n\nTerima kasih!`;
+    const message = `Halo! Saya ingin memesan:\n\n${orderText}\n\nTotal: ¥${total}\n\nTerima kasih!`;
     
     const whatsappUrl = `https://wa.me/81234567890?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');

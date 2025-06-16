@@ -50,6 +50,9 @@ export const useCart = () => {
     updateQuantity,
     clearCart,
     total,
-    itemCount
+    itemCount,
+    // Untuk kompatibilitas mundur
+    items: cart,
+    getTotalPrice: () => total
   };
 };
