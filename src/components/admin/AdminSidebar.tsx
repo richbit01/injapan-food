@@ -1,46 +1,59 @@
 
+import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   Package, 
-  Plus, 
   ShoppingCart, 
-  LogOut,
-  Settings
+  Users, 
+  Settings,
+  Trash2,
+  FileText,
+  BarChart3,
+  Upload,
+  Download
 } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
-import { Button } from '@/components/ui/button';
 
 const AdminSidebar = () => {
   const location = useLocation();
-  const { signOut } = useAuth();
+  const [collapsed, setCollapsed] = useState(false);
 
   const menuItems = [
     {
+      title: 'Dashboard',
       icon: LayoutDashboard,
-      label: 'Dashboard',
       path: '/admin',
       exact: true
     },
     {
+      title: 'Kelola Produk',
       icon: Package,
-      label: 'Semua Produk',
       path: '/admin/products'
     },
     {
-      icon: Plus,
-      label: 'Tambah Produk',
-      path: '/admin/products/new'
-    },
-    {
+      title: 'Riwayat Pesanan',
       icon: ShoppingCart,
-      label: 'Pesanan',
       path: '/admin/orders'
     },
     {
-      icon: Settings,
-      label: 'Pengaturan',
-      path: '/admin/settings'
+      title: 'Import/Export',
+      icon: Upload,
+      path: '/admin/import-export'
+    },
+    {
+      title: 'Recycle Bin',
+      icon: Trash2,
+      path: '/admin/recycle-bin'
+    },
+    {
+      title: 'Log Aktivitas',
+      icon: FileText,
+      path: '/admin/logs'
+    },
+    {
+      title: 'Statistik',
+      icon: BarChart3,
+      path: '/admin/analytics'
     }
   ];
 
@@ -52,45 +65,52 @@ const AdminSidebar = () => {
   };
 
   return (
-    <div className="w-64 bg-red-600 text-white min-h-screen flex flex-col">
-      <div className="p-6 border-b border-red-500">
-        <h2 className="text-xl font-bold">Admin Panel</h2>
-        <p className="text-red-200 text-sm">Injapan Food</p>
+    <div className={`bg-white shadow-lg transition-all duration-300 ${
+      collapsed ? 'w-20' : 'w-64'
+    }`}>
+      <div className="p-4 border-b">
+        <div className="flex items-center space-x-3">
+          <div className="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center">
+            <span className="text-white font-bold text-sm">IJ</span>
+          </div>
+          {!collapsed && (
+            <div>
+              <h2 className="font-bold text-gray-900">Injapan Food</h2>
+              <p className="text-xs text-gray-600">Admin Panel</p>
+            </div>
+          )}
+        </div>
+        <button
+          onClick={() => setCollapsed(!collapsed)}
+          className="mt-4 w-full flex justify-center p-2 text-gray-600 hover:bg-gray-100 rounded"
+        >
+          {collapsed ? '→' : '←'}
+        </button>
       </div>
-      
-      <nav className="flex-1 p-4">
-        <ul className="space-y-2">
+
+      <nav className="p-4">
+        <div className="space-y-2">
           {menuItems.map((item) => {
             const Icon = item.icon;
+            const active = isActive(item.path, item.exact);
+            
             return (
-              <li key={item.path}>
-                <Link
-                  to={item.path}
-                  className={`flex items-center space-x-3 p-3 rounded-lg transition-colors ${
-                    isActive(item.path, item.exact)
-                      ? 'bg-red-700 text-white'
-                      : 'text-red-100 hover:bg-red-700 hover:text-white'
-                  }`}
-                >
-                  <Icon className="w-5 h-5" />
-                  <span>{item.label}</span>
-                </Link>
-              </li>
+              <Link
+                key={item.path}
+                to={item.path}
+                className={`flex items-center space-x-3 p-3 rounded-lg transition-colors ${
+                  active 
+                    ? 'bg-red-100 text-red-700 border-r-2 border-red-600' 
+                    : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                <Icon className="w-5 h-5" />
+                {!collapsed && <span className="font-medium">{item.title}</span>}
+              </Link>
             );
           })}
-        </ul>
+        </div>
       </nav>
-      
-      <div className="p-4 border-t border-red-500">
-        <Button
-          onClick={signOut}
-          variant="ghost"
-          className="w-full justify-start text-red-100 hover:bg-red-700 hover:text-white"
-        >
-          <LogOut className="w-5 h-5 mr-3" />
-          Logout
-        </Button>
-      </div>
     </div>
   );
 };

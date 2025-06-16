@@ -9,6 +9,36 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      admin_logs: {
+        Row: {
+          action: string
+          admin_id: string | null
+          created_at: string | null
+          details: Json | null
+          id: string
+          target_id: string | null
+          target_type: string
+        }
+        Insert: {
+          action: string
+          admin_id?: string | null
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          target_id?: string | null
+          target_type: string
+        }
+        Update: {
+          action?: string
+          admin_id?: string | null
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          target_id?: string | null
+          target_type?: string
+        }
+        Relationships: []
+      }
       orders: {
         Row: {
           created_at: string
@@ -42,6 +72,45 @@ export type Database = {
         }
         Relationships: []
       }
+      orders_tracking: {
+        Row: {
+          created_at: string | null
+          customer_email: string | null
+          customer_name: string
+          customer_phone: string | null
+          id: string
+          items: Json
+          notes: string | null
+          status: string | null
+          total_amount: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          customer_email?: string | null
+          customer_name: string
+          customer_phone?: string | null
+          id?: string
+          items: Json
+          notes?: string | null
+          status?: string | null
+          total_amount: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          customer_email?: string | null
+          customer_name?: string
+          customer_phone?: string | null
+          id?: string
+          items?: Json
+          notes?: string | null
+          status?: string | null
+          total_amount?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       products: {
         Row: {
           category: string
@@ -51,8 +120,10 @@ export type Database = {
           image_url: string | null
           name: string
           price: number
+          status: string
           stock: number
           updated_at: string
+          variants: Json | null
         }
         Insert: {
           category: string
@@ -62,8 +133,10 @@ export type Database = {
           image_url?: string | null
           name: string
           price: number
+          status?: string
           stock?: number
           updated_at?: string
+          variants?: Json | null
         }
         Update: {
           category?: string
@@ -73,8 +146,10 @@ export type Database = {
           image_url?: string | null
           name?: string
           price?: number
+          status?: string
           stock?: number
           updated_at?: string
+          variants?: Json | null
         }
         Relationships: []
       }
@@ -102,6 +177,33 @@ export type Database = {
           phone?: string | null
           role?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      recycle_bin: {
+        Row: {
+          data: Json
+          deleted_at: string | null
+          deleted_by: string | null
+          id: string
+          original_id: string
+          original_table: string
+        }
+        Insert: {
+          data: Json
+          deleted_at?: string | null
+          deleted_by?: string | null
+          id?: string
+          original_id: string
+          original_table: string
+        }
+        Update: {
+          data?: Json
+          deleted_at?: string | null
+          deleted_by?: string | null
+          id?: string
+          original_id?: string
+          original_table?: string
         }
         Relationships: []
       }

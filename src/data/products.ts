@@ -9,6 +9,8 @@ export const sampleProducts: Product[] = [
     price: 480,
     category: 'Makanan Ringan',
     image_url: 'https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=400&h=300&fit=crop&crop=center',
+    stock: 25,
+    status: 'active'
   },
   {
     id: '2',
@@ -17,6 +19,13 @@ export const sampleProducts: Product[] = [
     price: 380,
     category: 'Bumbu Dapur',
     image_url: 'https://images.unsplash.com/photo-1498936178812-4b2e558d2937?w=400&h=300&fit=crop&crop=center',
+    stock: 15,
+    status: 'active',
+    variants: [
+      { id: 'v1', name: 'Level 10', price: 320, stock: 20 },
+      { id: 'v2', name: 'Level 30', price: 350, stock: 15 },
+      { id: 'v3', name: 'Level 50', price: 380, stock: 10 }
+    ]
   },
   {
     id: '3',
@@ -25,6 +34,8 @@ export const sampleProducts: Product[] = [
     price: 620,
     category: 'Bumbu Dapur',
     image_url: 'https://images.unsplash.com/photo-1582562124811-c09040d0a901?w=400&h=300&fit=crop&crop=center',
+    stock: 8,
+    status: 'active'
   },
   {
     id: '4',
@@ -33,6 +44,8 @@ export const sampleProducts: Product[] = [
     price: 720,
     category: 'Makanan Siap Saji',
     image_url: 'https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=400&h=300&fit=crop&crop=center',
+    stock: 12,
+    status: 'active'
   },
   {
     id: '5',
@@ -41,6 +54,8 @@ export const sampleProducts: Product[] = [
     price: 680,
     category: 'Makanan Siap Saji',
     image_url: 'https://images.unsplash.com/photo-1498936178812-4b2e558d2937?w=400&h=300&fit=crop&crop=center',
+    stock: 0,
+    status: 'out_of_stock'
   },
   {
     id: '6',
@@ -49,6 +64,8 @@ export const sampleProducts: Product[] = [
     price: 420,
     category: 'Makanan Ringan',
     image_url: 'https://images.unsplash.com/photo-1582562124811-c09040d0a901?w=400&h=300&fit=crop&crop=center',
+    stock: 18,
+    status: 'active'
   },
   {
     id: '7',
@@ -57,6 +74,8 @@ export const sampleProducts: Product[] = [
     price: 580,
     category: 'Bahan Masak Beku',
     image_url: 'https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=400&h=300&fit=crop&crop=center',
+    stock: 3,
+    status: 'active'
   },
   {
     id: '8',
@@ -65,6 +84,8 @@ export const sampleProducts: Product[] = [
     price: 640,
     category: 'Bahan Masak Beku',
     image_url: 'https://images.unsplash.com/photo-1498936178812-4b2e558d2937?w=400&h=300&fit=crop&crop=center',
+    stock: 7,
+    status: 'active'
   },
   {
     id: '9',
@@ -73,6 +94,8 @@ export const sampleProducts: Product[] = [
     price: 320,
     category: 'Sayur Segar/Beku',
     image_url: 'https://images.unsplash.com/photo-1582562124811-c09040d0a901?w=400&h=300&fit=crop&crop=center',
+    stock: 22,
+    status: 'active'
   },
   {
     id: '10',
@@ -81,6 +104,8 @@ export const sampleProducts: Product[] = [
     price: 380,
     category: 'Sayur Beku',
     image_url: 'https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=400&h=300&fit=crop&crop=center',
+    stock: 4,
+    status: 'active'
   },
   {
     id: '11',
@@ -89,6 +114,8 @@ export const sampleProducts: Product[] = [
     price: 280,
     category: 'Sayur Segar/Beku',
     image_url: 'https://images.unsplash.com/photo-1498936178812-4b2e558d2937?w=400&h=300&fit=crop&crop=center',
+    stock: 14,
+    status: 'inactive'
   },
 ];
 
