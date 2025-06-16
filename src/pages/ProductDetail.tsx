@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Plus } from 'lucide-react';
-import { sampleProducts } from '@/data/products';
+import { useProduct, useProducts } from '@/hooks/useProducts';
 import { formatPrice } from '@/utils/cart';
 import { useCart } from '@/hooks/useCart';
 import { toast } from '@/hooks/use-toast';
@@ -13,8 +13,22 @@ const ProductDetail = () => {
   const { id } = useParams();
   const { addToCart } = useCart();
   const [quantity, setQuantity] = useState(1);
+  
+  const { data: product, isLoading } = useProduct(id!);
+  const { data: allProducts = [] } = useProducts();
 
-  const product = sampleProducts.find(p => p.id === id);
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <div className="container mx-auto px-4 py-16 text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-gray-600">Memuat produk...</p>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   if (!product) {
     return (
@@ -41,7 +55,7 @@ const ProductDetail = () => {
     });
   };
 
-  const relatedProducts = sampleProducts
+  const relatedProducts = allProducts
     .filter(p => p.category === product.category && p.id !== product.id)
     .slice(0, 3);
 
@@ -64,7 +78,7 @@ const ProductDetail = () => {
           <div className="space-y-4">
             <div className="bg-white rounded-lg overflow-hidden shadow-md">
               <img
-                src={product.image_url}
+                src={product.image_url || '/placeholder.svg'}
                 alt={product.name}
                 className="w-full h-96 object-cover"
               />
@@ -88,39 +102,64 @@ const ProductDetail = () => {
               <p className="text-gray-600 leading-relaxed">{product.description}</p>
             </div>
 
-            {/* Quantity Selector */}
+            {/* Stock Status */}
             <div>
-              <h3 className="text-lg font-semibold mb-3">Jumlah</h3>
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center border border-gray-300 rounded-lg">
-                  <button
-                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="px-4 py-2 text-gray-600 hover:text-primary"
-                  >
-                    -
-                  </button>
-                  <span className="px-4 py-2 border-x border-gray-300">{quantity}</span>
-                  <button
-                    onClick={() => setQuantity(quantity + 1)}
-                    className="px-4 py-2 text-gray-600 hover:text-primary"
-                  >
-                    +
-                  </button>
-                </div>
-                <div className="text-lg font-semibold">
-                  Total: {formatPrice(product.price * quantity)}
-                </div>
+              <h3 className="text-lg font-semibold mb-3">Ketersediaan</h3>
+              <div className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
+                product.stock > 10 
+                  ? 'bg-green-100 text-green-800' 
+                  : product.stock > 0 
+                    ? 'bg-yellow-100 text-yellow-800'
+                    : 'bg-red-100 text-red-800'
+              }`}>
+                {product.stock > 0 ? `Tersedia (${product.stock})` : 'Stok Habis'}
               </div>
             </div>
 
+            {/* Quantity Selector */}
+            {product.stock > 0 && (
+              <div>
+                <h3 className="text-lg font-semibold mb-3">Jumlah</h3>
+                <div className="flex items-center space-x-4">
+                  <div className="flex items-center border border-gray-300 rounded-lg">
+                    <button
+                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                      className="px-4 py-2 text-gray-600 hover:text-primary"
+                    >
+                      -
+                    </button>
+                    <span className="px-4 py-2 border-x border-gray-300">{quantity}</span>
+                    <button
+                      onClick={() => setQuantity(Math.min(product.stock, quantity + 1))}
+                      className="px-4 py-2 text-gray-600 hover:text-primary"
+                    >
+                      +
+                    </button>
+                  </div>
+                  <div className="text-lg font-semibold">
+                    Total: {formatPrice(product.price * quantity)}
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Add to Cart Button */}
-            <button
-              onClick={handleAddToCart}
-              className="w-full btn-primary text-lg py-4 flex items-center justify-center space-x-2"
-            >
-              <Plus className="w-5 h-5" />
-              <span>Tambahkan ke Keranjang</span>
-            </button>
+            {product.stock > 0 ? (
+              <button
+                onClick={handleAddToCart}
+                className="w-full btn-primary text-lg py-4 flex items-center justify-center space-x-2"
+              >
+                <Plus className="w-5 h-5" />
+                <span>Tambahkan ke Keranjang</span>
+              </button>
+            ) : (
+              <button
+                disabled
+                className="w-full bg-gray-400 text-white text-lg py-4 rounded-lg cursor-not-allowed"
+              >
+                Stok Habis
+              </button>
+            )}
 
             {/* Product Features */}
             <div className="grid grid-cols-2 gap-4 pt-6 border-t border-gray-200">
@@ -143,9 +182,9 @@ const ProductDetail = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {relatedProducts.map((relatedProduct) => (
                 <div key={relatedProduct.id} className="card-product p-4">
-                  <Link to={`/product/${relatedProduct.id}`}>
+                  <Link to={`/products/${relatedProduct.id}`}>
                     <img
-                      src={relatedProduct.image_url}
+                      src={relatedProduct.image_url || '/placeholder.svg'}
                       alt={relatedProduct.name}
                       className="w-full h-48 object-cover rounded-lg mb-4"
                     />
