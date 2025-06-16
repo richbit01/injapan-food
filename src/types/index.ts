@@ -17,7 +17,7 @@ export interface CartItem {
 
 export interface OrderItem {
   product_id: string;
-  product_name: string;
+  name: string;
   quantity: number;
   price: number;
 }
@@ -29,6 +29,7 @@ export interface Order {
   total_price: number;
   customer_info: {
     name: string;
+    email: string;
     prefecture: string;
     postal_code: string;
     address: string;

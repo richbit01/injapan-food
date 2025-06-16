@@ -175,8 +175,8 @@ const Orders = () => {
                           <h4 className="font-medium text-gray-900 mb-2">Alamat Pengiriman:</h4>
                           <div className="text-sm text-gray-600">
                             <p>{order.customer_info.address}</p>
-                            <p>{order.customer_info.city}, {order.customer_info.prefecture}</p>
-                            <p>{order.customer_info.postalCode}</p>
+                            <p>{order.customer_info.prefecture}</p>
+                            <p>{order.customer_info.postal_code}</p>
                           </div>
                         </div>
                       </div>
