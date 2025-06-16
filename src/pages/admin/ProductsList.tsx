@@ -72,7 +72,7 @@ const ProductsList = () => {
             <h1 className="text-3xl font-bold text-gray-900">Kelola Produk</h1>
             <p className="text-gray-600">Lihat dan kelola semua produk</p>
           </div>
-          <Link to="/admin/products/new">
+          <Link to="/admin/products/add">
             <Button className="bg-green-600 hover:bg-green-700">
               Tambah Produk Baru
             </Button>
