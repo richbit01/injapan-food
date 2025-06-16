@@ -9,8 +9,12 @@ const Footer = () => {
           {/* Brand */}
           <div className="col-span-1 md:col-span-2">
             <div className="flex items-center space-x-2 mb-4">
-              <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-lg">IJ</span>
+              <div className="w-10 h-10 rounded-lg overflow-hidden">
+                <img 
+                  src="/lovable-uploads/022a8dd4-6c9e-4b02-82a8-703a2cbfb51a.png" 
+                  alt="Injapan Food Logo" 
+                  className="w-full h-full object-cover"
+                />
               </div>
               <div>
                 <h3 className="text-xl font-bold">Injapan Food</h3>
@@ -69,9 +73,6 @@ const Footer = () => {
 
         <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
           <p>&copy; 2025 Injapan Food. All rights reserved.</p>
-          <p className="text-sm mt-2">
-            Dibuat dengan ❤️ untuk orang Indonesia di Jepang
-          </p>
         </div>
       </div>
     </footer>

@@ -70,8 +70,12 @@ const AdminSidebar = () => {
     }`}>
       <div className="p-4 border-b">
         <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-sm">IJ</span>
+          <div className="w-8 h-8 rounded-lg overflow-hidden">
+            <img 
+              src="/lovable-uploads/022a8dd4-6c9e-4b02-82a8-703a2cbfb51a.png" 
+              alt="Injapan Food Logo" 
+              className="w-full h-full object-cover"
+            />
           </div>
           {!collapsed && (
             <div>

@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
@@ -107,8 +108,12 @@ const AuthForm = () => {
     <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
-          <div className="w-16 h-16 bg-primary rounded-lg flex items-center justify-center mx-auto mb-4">
-            <span className="text-white font-bold text-2xl">IJ</span>
+          <div className="w-16 h-16 rounded-lg overflow-hidden mx-auto mb-4">
+            <img 
+              src="/lovable-uploads/022a8dd4-6c9e-4b02-82a8-703a2cbfb51a.png" 
+              alt="Injapan Food Logo" 
+              className="w-full h-full object-cover"
+            />
           </div>
           <h2 className="text-3xl font-bold text-gray-900">Injapan Food</h2>
           <p className="mt-2 text-sm text-gray-600">Makanan Indonesia di Jepang</p>

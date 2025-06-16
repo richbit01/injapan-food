@@ -31,8 +31,12 @@ const Header = ({ shouldAnimateCart = false }: HeaderProps) => {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2">
-            <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-lg">IJ</span>
+            <div className="w-10 h-10 rounded-lg overflow-hidden">
+              <img 
+                src="/lovable-uploads/022a8dd4-6c9e-4b02-82a8-703a2cbfb51a.png" 
+                alt="Injapan Food Logo" 
+                className="w-full h-full object-cover"
+              />
             </div>
             <div>
               <h1 className="text-xl font-bold text-primary">Injapan Food</h1>
