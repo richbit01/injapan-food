@@ -1,12 +1,31 @@
 
 import { Link } from 'react-router-dom';
-import { sampleProducts, categories } from '@/data/products';
 import ProductCard from '@/components/ProductCard';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import { useProducts } from '@/hooks/useProducts';
+import { useQuery } from '@tanstack/react-query';
+import { getCategories } from '@/services/productService';
 
 const Index = () => {
-  const featuredProducts = sampleProducts.slice(0, 6);
+  const { data: products = [], isLoading: productsLoading } = useProducts();
+  const { data: categories = [], isLoading: categoriesLoading } = useQuery({
+    queryKey: ['categories'],
+    queryFn: getCategories,
+  });
+
+  const featuredProducts = products.slice(0, 6);
+
+  if (productsLoading || categoriesLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-gray-600">Memuat produk...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -45,7 +64,7 @@ const Index = () => {
                 className="bg-gray-50 hover:bg-primary hover:text-white p-6 rounded-lg text-center transition-all duration-200 transform hover:scale-105"
               >
                 <div className="text-2xl mb-2">
-                  {['🍿', '🌶️', '🍜', '🧊', '🥬', '🍃'][index]}
+                  {['🍿', '🌶️', '🍜', '🧊', '🥬', '🍃'][index % 6]}
                 </div>
                 <h3 className="font-medium text-sm">{category}</h3>
               </Link>
@@ -58,11 +77,17 @@ const Index = () => {
       <section className="py-16">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl font-bold text-center mb-12">Produk Populer</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {featuredProducts.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
+          {featuredProducts.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {featuredProducts.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <p className="text-gray-600">Belum ada produk tersedia</p>
+            </div>
+          )}
           <div className="text-center mt-12">
             <Link
               to="/products"
