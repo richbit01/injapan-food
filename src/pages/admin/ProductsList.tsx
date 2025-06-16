@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Edit, Trash, Search, Filter } from 'lucide-react';
+import { Edit, Trash, Search, Filter, Eye } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import AdminLayout from '@/components/admin/AdminLayout';
 
@@ -16,6 +16,8 @@ const ProductsList = () => {
   const { data: products = [], refetch } = useProducts();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
+
+  console.log('Products data:', products); // Debug log
 
   const categories = Array.from(new Set(products.map(p => p.category)));
 
@@ -147,8 +149,13 @@ const ProductsList = () => {
                   </div>
                   
                   <div className="flex space-x-2">
+                    <Link to={`/products/${product.id}`}>
+                      <Button size="sm" variant="outline" title="Lihat Produk">
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                    </Link>
                     <Link to={`/admin/products/edit/${product.id}`}>
-                      <Button size="sm" variant="outline">
+                      <Button size="sm" variant="outline" title="Edit Produk">
                         <Edit className="w-4 h-4" />
                       </Button>
                     </Link>
@@ -156,6 +163,7 @@ const ProductsList = () => {
                       size="sm" 
                       variant="destructive" 
                       onClick={() => handleDeleteProduct(product.id, product.image_url)}
+                      title="Hapus Produk"
                     >
                       <Trash className="w-4 h-4" />
                     </Button>
@@ -165,7 +173,7 @@ const ProductsList = () => {
               
               {filteredProducts.length === 0 && (
                 <div className="text-center py-8 text-gray-500">
-                  Tidak ada produk yang ditemukan
+                  {products.length === 0 ? 'Belum ada produk yang ditambahkan' : 'Tidak ada produk yang ditemukan'}
                 </div>
               )}
             </div>

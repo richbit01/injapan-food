@@ -7,6 +7,8 @@ export const useProducts = () => {
   return useQuery({
     queryKey: ['products'],
     queryFn: async (): Promise<Product[]> => {
+      console.log('Fetching products...');
+      
       const { data, error } = await supabase
         .from('products')
         .select('*')
@@ -17,13 +19,18 @@ export const useProducts = () => {
         throw error;
       }
 
-      return (data || []).map(product => ({
+      console.log('Raw products data:', data);
+
+      const products = (data || []).map(product => ({
         ...product,
         status: product.status as 'active' | 'inactive' | 'out_of_stock',
         variants: Array.isArray(product.variants) 
           ? (product.variants as unknown as ProductVariant[])
           : []
       }));
+
+      console.log('Processed products:', products);
+      return products;
     },
   });
 };
@@ -32,7 +39,12 @@ export const useProduct = (id: string) => {
   return useQuery({
     queryKey: ['product', id],
     queryFn: async (): Promise<Product | null> => {
-      if (!id) return null;
+      if (!id) {
+        console.log('No ID provided for useProduct');
+        return null;
+      }
+      
+      console.log('Fetching product with ID:', id);
       
       const { data, error } = await supabase
         .from('products')
@@ -43,10 +55,13 @@ export const useProduct = (id: string) => {
       if (error) {
         console.error('Error fetching product:', error);
         if (error.code === 'PGRST116') {
+          console.log('Product not found for ID:', id);
           return null; // Product not found
         }
         throw error;
       }
+
+      console.log('Found product:', data);
 
       return {
         ...data,
