@@ -26,6 +26,8 @@ export const useProduct = (id: string) => {
   return useQuery({
     queryKey: ['product', id],
     queryFn: async (): Promise<Product | null> => {
+      if (!id) return null;
+      
       const { data, error } = await supabase
         .from('products')
         .select('*')
@@ -42,5 +44,6 @@ export const useProduct = (id: string) => {
 
       return data;
     },
+    enabled: !!id,
   });
 };
