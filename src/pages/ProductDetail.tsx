@@ -1,26 +1,48 @@
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Plus } from 'lucide-react';
 import { useProduct, useProducts } from '@/hooks/useProducts';
 import { formatPrice } from '@/utils/cart';
-import { useCart } from '@/hooks/useCart';
-import { toast } from '@/hooks/use-toast';
+import { useCartAnimation } from '@/hooks/useCartAnimation';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import AddToCartButton from '@/components/AddToCartButton';
+import FlyingProductAnimation from '@/components/FlyingProductAnimation';
 
 const ProductDetail = () => {
   const { id } = useParams();
-  const { addToCart } = useCart();
   const [quantity, setQuantity] = useState(1);
+  const quantityRef = useRef<HTMLDivElement>(null);
   
   const { data: product, isLoading } = useProduct(id!);
   const { data: allProducts = [] } = useProducts();
+  
+  const {
+    animatingProduct,
+    startPosition,
+    targetPosition,
+    isAnimating,
+    shouldAnimateCart,
+    triggerAnimation,
+    resetAnimation
+  } = useCartAnimation();
+
+  const handleAddToCart = (position: { x: number; y: number }) => {
+    if (product) {
+      // Get cart icon position (approximate)
+      const cartPosition = {
+        x: window.innerWidth - 100, // Approximate cart position
+        y: 80 // Header height
+      };
+      
+      triggerAnimation(product, position, cartPosition);
+    }
+  };
 
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <Header />
+        <Header shouldAnimateCart={shouldAnimateCart} />
         <div className="container mx-auto px-4 py-16 text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-gray-600">Memuat produk...</p>
@@ -46,22 +68,22 @@ const ProductDetail = () => {
     );
   }
 
-  const handleAddToCart = () => {
-    addToCart(product, quantity);
-    toast({
-      title: "Berhasil ditambahkan!",
-      description: `${quantity}x ${product.name} telah ditambahkan ke keranjang`,
-      duration: 2000,
-    });
-  };
-
   const relatedProducts = allProducts
     .filter(p => p.category === product.category && p.id !== product.id)
     .slice(0, 3);
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
+      <Header shouldAnimateCart={shouldAnimateCart} />
+      
+      {/* Flying Product Animation */}
+      <FlyingProductAnimation
+        product={animatingProduct}
+        startPosition={startPosition}
+        targetPosition={targetPosition}
+        isAnimating={isAnimating}
+        onComplete={resetAnimation}
+      />
       
       <div className="container mx-auto px-4 py-8">
         {/* Breadcrumb */}
@@ -118,20 +140,20 @@ const ProductDetail = () => {
 
             {/* Quantity Selector */}
             {product.stock > 0 && (
-              <div>
+              <div ref={quantityRef}>
                 <h3 className="text-lg font-semibold mb-3">Jumlah</h3>
                 <div className="flex items-center space-x-4">
                   <div className="flex items-center border border-gray-300 rounded-lg">
                     <button
                       onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                      className="px-4 py-2 text-gray-600 hover:text-primary"
+                      className="px-4 py-2 text-gray-600 hover:text-primary transition-colors"
                     >
                       -
                     </button>
                     <span className="px-4 py-2 border-x border-gray-300">{quantity}</span>
                     <button
                       onClick={() => setQuantity(Math.min(product.stock, quantity + 1))}
-                      className="px-4 py-2 text-gray-600 hover:text-primary"
+                      className="px-4 py-2 text-gray-600 hover:text-primary transition-colors"
                     >
                       +
                     </button>
@@ -145,13 +167,12 @@ const ProductDetail = () => {
 
             {/* Add to Cart Button */}
             {product.stock > 0 ? (
-              <button
-                onClick={handleAddToCart}
-                className="w-full btn-primary text-lg py-4 flex items-center justify-center space-x-2"
-              >
-                <Plus className="w-5 h-5" />
-                <span>Tambahkan ke Keranjang</span>
-              </button>
+              <AddToCartButton
+                product={product}
+                quantity={quantity}
+                className="w-full text-lg py-4 flex items-center justify-center space-x-2"
+                onAddToCart={handleAddToCart}
+              />
             ) : (
               <button
                 disabled

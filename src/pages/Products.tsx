@@ -1,54 +1,54 @@
 
-import { useState, useMemo } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useState, useRef } from 'react';
+import { useProducts } from '@/hooks/useProducts';
+import { useCartAnimation } from '@/hooks/useCartAnimation';
 import ProductCard from '@/components/ProductCard';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { useProducts } from '@/hooks/useProducts';
-import { useQuery } from '@tanstack/react-query';
-import { getCategories } from '@/services/productService';
+import FlyingProductAnimation from '@/components/FlyingProductAnimation';
+import { Product } from '@/types';
 
 const Products = () => {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const { data: products = [], isLoading } = useProducts();
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState(
-    searchParams.get('category') || ''
-  );
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  
+  const {
+    animatingProduct,
+    startPosition,
+    targetPosition,
+    isAnimating,
+    shouldAnimateCart,
+    triggerAnimation,
+    resetAnimation
+  } = useCartAnimation();
 
-  const { data: products = [], isLoading: productsLoading } = useProducts();
-  const { data: categories = [], isLoading: categoriesLoading } = useQuery({
-    queryKey: ['categories'],
-    queryFn: getCategories,
+  const categories = Array.from(new Set(products.map(p => p.category)));
+
+  const filteredProducts = products.filter(product => {
+    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         product.description?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = selectedCategory === 'all' || product.category === selectedCategory;
+    return matchesSearch && matchesCategory;
   });
 
-  const filteredProducts = useMemo(() => {
-    return products.filter((product) => {
-      const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          product.description?.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesCategory = !selectedCategory || product.category === selectedCategory;
-      
-      return matchesSearch && matchesCategory;
-    });
-  }, [products, searchTerm, selectedCategory]);
-
-  const handleCategoryChange = (category: string) => {
-    setSelectedCategory(category);
-    if (category) {
-      setSearchParams({ category });
-    } else {
-      setSearchParams({});
-    }
+  const handleAddToCart = (product: Product, position: { x: number; y: number }) => {
+    // Get cart icon position (approximate)
+    const cartPosition = {
+      x: window.innerWidth - 100,
+      y: 80
+    };
+    
+    triggerAnimation(product, position, cartPosition);
   };
 
-  if (productsLoading || categoriesLoading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />
-        <div className="container mx-auto px-4 py-8 flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-            <p className="text-gray-600">Memuat produk...</p>
-          </div>
+        <div className="container mx-auto px-4 py-16 text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-gray-600">Memuat produk...</p>
         </div>
         <Footer />
       </div>
@@ -57,82 +57,64 @@ const Products = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
+      <Header shouldAnimateCart={shouldAnimateCart} />
+      
+      {/* Flying Product Animation */}
+      <FlyingProductAnimation
+        product={animatingProduct}
+        startPosition={startPosition}
+        targetPosition={targetPosition}
+        isAnimating={isAnimating}
+        onComplete={resetAnimation}
+      />
       
       <div className="container mx-auto px-4 py-8">
-        {/* Page Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-primary mb-4">Katalog Produk</h1>
-          <p className="text-lg text-gray-600">
-            Jelajahi koleksi lengkap makanan khas Indonesia kami
-          </p>
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">Katalog Produk</h1>
+          <p className="text-xl text-gray-600">Temukan makanan Indonesia favorit Anda</p>
         </div>
 
         {/* Search and Filter */}
-        <div className="bg-white p-6 rounded-lg shadow-md mb-8">
-          <div className="flex flex-col lg:flex-row gap-4">
-            {/* Search */}
-            <div className="flex-1">
-              <input
-                type="text"
-                placeholder="Cari produk..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-              />
-            </div>
-            
-            {/* Category Filter */}
-            <div className="lg:w-64">
-              <select
-                value={selectedCategory}
-                onChange={(e) => handleCategoryChange(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-              >
-                <option value="">Semua Kategori</option>
-                {categories.map((category) => (
-                  <option key={category} value={category}>
-                    {category}
-                  </option>
-                ))}
-              </select>
-            </div>
+        <div className="mb-8 space-y-4 md:space-y-0 md:flex md:items-center md:space-x-4">
+          <div className="flex-1">
+            <input
+              type="text"
+              placeholder="Cari produk..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+            />
           </div>
-        </div>
-
-        {/* Results */}
-        <div className="mb-6">
-          <p className="text-gray-600">
-            Menampilkan {filteredProducts.length} produk
-            {selectedCategory && ` dalam kategori "${selectedCategory}"`}
-            {searchTerm && ` dengan kata kunci "${searchTerm}"`}
-          </p>
+          <div className="md:w-48">
+            <select
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+            >
+              <option value="all">Semua Kategori</option>
+              {categories.map(category => (
+                <option key={category} value={category}>{category}</option>
+              ))}
+            </select>
+          </div>
         </div>
 
         {/* Products Grid */}
         {filteredProducts.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredProducts.map((product) => (
-              <ProductCard key={product.id} product={product} />
+              <ProductCard 
+                key={product.id} 
+                product={product} 
+                onAddToCart={handleAddToCart}
+              />
             ))}
           </div>
         ) : (
-          <div className="text-center py-12">
+          <div className="text-center py-16">
             <div className="text-6xl mb-4">🔍</div>
-            <h3 className="text-2xl font-semibold mb-2">Produk Tidak Ditemukan</h3>
-            <p className="text-gray-600 mb-6">
-              Coba ubah kata kunci pencarian atau pilih kategori lain
-            </p>
-            <button
-              onClick={() => {
-                setSearchTerm('');
-                setSelectedCategory('');
-                setSearchParams({});
-              }}
-              className="btn-primary"
-            >
-              Reset Filter
-            </button>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Produk Tidak Ditemukan</h2>
+            <p className="text-gray-600">Coba gunakan kata kunci yang berbeda atau pilih kategori lain</p>
           </div>
         )}
       </div>

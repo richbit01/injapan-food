@@ -1,43 +1,27 @@
 
+import { useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus } from 'lucide-react';
 import { Product } from '@/types';
 import { formatPrice } from '@/utils/cart';
-import { useCart } from '@/hooks/useCart';
-import { toast } from '@/hooks/use-toast';
+import AddToCartButton from '@/components/AddToCartButton';
 
 interface ProductCardProps {
   product: Product;
+  onAddToCart?: (product: Product, position: { x: number; y: number }) => void;
 }
 
-const ProductCard = ({ product }: ProductCardProps) => {
-  const { addToCart } = useCart();
+const ProductCard = ({ product, onAddToCart }: ProductCardProps) => {
+  const cardRef = useRef<HTMLDivElement>(null);
 
-  const handleAddToCart = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    if (product.stock === 0) {
-      toast({
-        title: "Stok Habis",
-        description: `${product.name} sedang tidak tersedia`,
-        variant: "destructive",
-        duration: 2000,
-      });
-      return;
+  const handleAddToCart = (position: { x: number; y: number }) => {
+    if (onAddToCart) {
+      onAddToCart(product, position);
     }
-    
-    addToCart(product);
-    toast({
-      title: "Berhasil ditambahkan!",
-      description: `${product.name} telah ditambahkan ke keranjang`,
-      duration: 2000,
-    });
   };
 
   return (
     <Link to={`/products/${product.id}`}>
-      <div className="card-product p-4 h-full">
+      <div ref={cardRef} className="card-product p-4 h-full transition-transform duration-200 hover:scale-105">
         <div className="relative overflow-hidden rounded-lg mb-4">
           <img
             src={product.image_url || '/placeholder.svg'}
@@ -67,18 +51,18 @@ const ProductCard = ({ product }: ProductCardProps) => {
               {formatPrice(product.price)}
             </div>
             
-            <button
-              onClick={handleAddToCart}
-              disabled={product.stock === 0}
-              className={`px-3 py-2 text-sm flex items-center space-x-1 rounded-lg transition-colors ${
-                product.stock === 0 
-                  ? 'bg-gray-400 text-white cursor-not-allowed'
-                  : 'btn-primary'
-              }`}
-            >
-              <Plus className="w-4 h-4" />
-              <span>{product.stock === 0 ? 'Habis' : 'Keranjang'}</span>
-            </button>
+            <div onClick={(e) => e.preventDefault()}>
+              <AddToCartButton
+                product={product}
+                className={`px-3 py-2 text-sm flex items-center space-x-1 rounded-lg transition-colors ${
+                  product.stock === 0 
+                    ? 'bg-gray-400 text-white cursor-not-allowed'
+                    : 'btn-primary'
+                }`}
+                onAddToCart={handleAddToCart}
+                disabled={product.stock === 0}
+              />
+            </div>
           </div>
           
           <div className="mt-2">

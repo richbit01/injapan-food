@@ -1,16 +1,20 @@
 
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { ShoppingCart, LogIn } from 'lucide-react';
+import { LogIn } from 'lucide-react';
 import { useCart } from '@/hooks/useCart';
 import { useAuth } from '@/hooks/useAuth';
 import UserMenu from '@/components/UserMenu';
+import CartIcon from '@/components/CartIcon';
 import { Button } from '@/components/ui/button';
 
-const Header = () => {
+interface HeaderProps {
+  shouldAnimateCart?: boolean;
+}
+
+const Header = ({ shouldAnimateCart = false }: HeaderProps) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
-  const { itemCount } = useCart();
   const { user } = useAuth();
 
   const isActive = (path: string) => location.pathname === path;
@@ -59,13 +63,9 @@ const Header = () => {
             <Link
               to="/cart"
               className="relative p-2 text-gray-700 hover:text-primary transition-colors duration-200"
+              aria-label="Shopping Cart"
             >
-              <ShoppingCart className="w-6 h-6" />
-              {itemCount > 0 && (
-                <span className="absolute -top-2 -right-2 bg-primary text-white text-xs rounded-full w-5 h-5 flex items-center justify-center animate-bounce-gentle">
-                  {itemCount}
-                </span>
-              )}
+              <CartIcon onAnimationTrigger={shouldAnimateCart} />
             </Link>
 
             {/* Auth */}
