@@ -1,5 +1,4 @@
-
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useProduct, useProducts } from '@/hooks/useProducts';
 import { formatPrice } from '@/utils/cart';
@@ -26,6 +25,11 @@ const ProductDetail = () => {
     triggerAnimation,
     resetAnimation
   } = useCartAnimation();
+
+  // Scroll to top when component mounts or product changes
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [id]);
 
   const handleAddToCart = (position: { x: number; y: number }) => {
     if (product) {
