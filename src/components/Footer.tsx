@@ -68,9 +68,9 @@ const Footer = () => {
         </div>
 
         <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-          <p>&copy; 2024 Injapan Food. All rights reserved.</p>
+          <p>&copy; 2025 Injapan Food. All rights reserved.</p>
           <p className="text-sm mt-2">
-            Dibuat dengan ❤️ untuk komunitas Indonesia di Jepang
+            Dibuat dengan ❤️ untuk orang Indonesia di Jepang
           </p>
         </div>
       </div>
