@@ -55,7 +55,7 @@ Informasi Pengiriman:${customerDetails}
 
 Terima kasih!`;
     
-    const whatsappUrl = `https://wa.me/+6285155452259?text=${encodeURIComponent(message)}`;
+    const whatsappUrl = `https://wa.me/+817089434435?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
     
     // Call onSuccess callback to clear cart and reset form
