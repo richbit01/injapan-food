@@ -1,14 +1,17 @@
 
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { ShoppingCart, Plus } from 'lucide-react';
+import { ShoppingCart, LogIn } from 'lucide-react';
 import { useCart } from '@/hooks/useCart';
-import { formatPrice } from '@/utils/cart';
+import { useAuth } from '@/hooks/useAuth';
+import UserMenu from '@/components/UserMenu';
+import { Button } from '@/components/ui/button';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
   const { itemCount } = useCart();
+  const { user } = useAuth();
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -50,8 +53,9 @@ const Header = () => {
             ))}
           </nav>
 
-          {/* Cart and Mobile Menu */}
+          {/* Right side - Cart, Auth, Mobile Menu */}
           <div className="flex items-center space-x-4">
+            {/* Cart */}
             <Link
               to="/cart"
               className="relative p-2 text-gray-700 hover:text-primary transition-colors duration-200"
@@ -63,6 +67,18 @@ const Header = () => {
                 </span>
               )}
             </Link>
+
+            {/* Auth */}
+            {user ? (
+              <UserMenu />
+            ) : (
+              <Link to="/auth">
+                <Button variant="outline" size="sm" className="flex items-center space-x-2">
+                  <LogIn className="w-4 h-4" />
+                  <span className="hidden sm:inline">Masuk</span>
+                </Button>
+              </Link>
+            )}
 
             {/* Mobile Menu Button */}
             <button
@@ -102,6 +118,15 @@ const Header = () => {
                   {item.label}
                 </Link>
               ))}
+              {!user && (
+                <Link
+                  to="/auth"
+                  onClick={() => setIsMenuOpen(false)}
+                  className="text-gray-700 hover:text-primary font-medium"
+                >
+                  Masuk / Daftar
+                </Link>
+              )}
             </nav>
           </div>
         )}

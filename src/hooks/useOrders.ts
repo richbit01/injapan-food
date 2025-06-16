@@ -17,7 +17,12 @@ export const useOrders = () => {
         throw error;
       }
 
-      return data || [];
+      return data?.map(order => ({
+        ...order,
+        items: order.items as OrderItem[],
+        customer_info: order.customer_info as Order['customer_info'],
+        status: order.status as Order['status']
+      })) || [];
     },
   });
 };
@@ -43,7 +48,7 @@ export const useCreateOrder = () => {
           user_id: userId || null,
           total_price: totalPrice,
           customer_info: customerInfo,
-          items: items,
+          items: items as any,
           status: 'pending'
         })
         .select()

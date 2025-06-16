@@ -4,15 +4,16 @@ import { supabase } from '@/integrations/supabase/client';
 export const getCategories = async (): Promise<string[]> => {
   const { data, error } = await supabase
     .from('products')
-    .select('category')
-    .distinct();
+    .select('category');
 
   if (error) {
     console.error('Error fetching categories:', error);
     throw error;
   }
 
-  return data?.map(item => item.category) || [];
+  // Get unique categories
+  const uniqueCategories = Array.from(new Set(data?.map(item => item.category) || []));
+  return uniqueCategories;
 };
 
 export const getProductsByCategory = async (category: string) => {
