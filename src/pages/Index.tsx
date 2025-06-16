@@ -8,21 +8,45 @@ import { useQuery } from '@tanstack/react-query';
 import { getCategories } from '@/services/productService';
 
 const Index = () => {
-  const { data: products = [], isLoading: productsLoading } = useProducts();
-  const { data: categories = [], isLoading: categoriesLoading } = useQuery({
+  const { data: products = [], isLoading: productsLoading, isError: productsError } = useProducts();
+  const { data: categories = [], isLoading: categoriesLoading, isError: categoriesError } = useQuery({
     queryKey: ['categories'],
     queryFn: getCategories,
   });
 
   const featuredProducts = products.slice(0, 6);
 
-  if (productsLoading || categoriesLoading) {
+  // Show error state if there's an error
+  if (productsError || categoriesError) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <div className="container mx-auto px-4 py-16 text-center">
+          <div className="text-6xl mb-4">⚠️</div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Terjadi Kesalahan</h2>
+          <p className="text-gray-600 mb-4">Gagal memuat data. Silakan coba refresh halaman.</p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="bg-primary text-white px-6 py-3 rounded-lg hover:bg-primary/90"
+          >
+            Refresh Halaman
+          </button>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  // Show loading only if both are still loading
+  if (productsLoading && categoriesLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <div className="container mx-auto px-4 py-16 text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-gray-600">Memuat produk...</p>
         </div>
+        <Footer />
       </div>
     );
   }
@@ -56,20 +80,31 @@ const Index = () => {
       <section className="py-16 bg-white">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl font-bold text-center mb-12">Kategori Produk</h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            {categories.map((category, index) => (
-              <Link
-                key={category}
-                to={`/products?category=${encodeURIComponent(category)}`}
-                className="bg-gray-50 hover:bg-primary hover:text-white p-6 rounded-lg text-center transition-all duration-200 transform hover:scale-105"
-              >
-                <div className="text-2xl mb-2">
-                  {['🍿', '🌶️', '🍜', '🧊', '🥬', '🍃'][index % 6]}
-                </div>
-                <h3 className="font-medium text-sm">{category}</h3>
-              </Link>
-            ))}
-          </div>
+          {categoriesLoading ? (
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+              <p className="text-gray-600">Memuat kategori...</p>
+            </div>
+          ) : categories.length > 0 ? (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+              {categories.map((category, index) => (
+                <Link
+                  key={category}
+                  to={`/products?category=${encodeURIComponent(category)}`}
+                  className="bg-gray-50 hover:bg-primary hover:text-white p-6 rounded-lg text-center transition-all duration-200 transform hover:scale-105"
+                >
+                  <div className="text-2xl mb-2">
+                    {['🍿', '🌶️', '🍜', '🧊', '🥬', '🍃'][index % 6]}
+                  </div>
+                  <h3 className="font-medium text-sm">{category}</h3>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-gray-600">Belum ada kategori tersedia</p>
+            </div>
+          )}
         </div>
       </section>
 
@@ -77,7 +112,12 @@ const Index = () => {
       <section className="py-16">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl font-bold text-center mb-12">Produk Populer</h2>
-          {featuredProducts.length > 0 ? (
+          {productsLoading ? (
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+              <p className="text-gray-600">Memuat produk...</p>
+            </div>
+          ) : featuredProducts.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {featuredProducts.map((product) => (
                 <ProductCard key={product.id} product={product} />
@@ -85,17 +125,21 @@ const Index = () => {
             </div>
           ) : (
             <div className="text-center py-12">
-              <p className="text-gray-600">Belum ada produk tersedia</p>
+              <div className="text-6xl mb-4">📦</div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Belum Ada Produk</h3>
+              <p className="text-gray-600">Produk akan segera ditambahkan</p>
             </div>
           )}
-          <div className="text-center mt-12">
-            <Link
-              to="/products"
-              className="btn-primary inline-block"
-            >
-              Lihat Semua Produk
-            </Link>
-          </div>
+          {featuredProducts.length > 0 && (
+            <div className="text-center mt-12">
+              <Link
+                to="/products"
+                className="btn-primary inline-block"
+              >
+                Lihat Semua Produk
+              </Link>
+            </div>
+          )}
         </div>
       </section>
 

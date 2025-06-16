@@ -9,7 +9,7 @@ import FlyingProductAnimation from '@/components/FlyingProductAnimation';
 import { Product } from '@/types';
 
 const Products = () => {
-  const { data: products = [], isLoading } = useProducts();
+  const { data: products = [], isLoading, isError, error } = useProducts();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   
@@ -42,6 +42,30 @@ const Products = () => {
     triggerAnimation(product, position, cartPosition);
   };
 
+  // Show error state
+  if (isError) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <div className="container mx-auto px-4 py-16 text-center">
+          <div className="text-6xl mb-4">⚠️</div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Terjadi Kesalahan</h2>
+          <p className="text-gray-600 mb-4">
+            {error?.message || 'Gagal memuat produk. Silakan coba refresh halaman.'}
+          </p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="bg-primary text-white px-6 py-3 rounded-lg hover:bg-primary/90"
+          >
+            Refresh Halaman
+          </button>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  // Show loading state
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -99,7 +123,7 @@ const Products = () => {
           </div>
         </div>
 
-        {/* Products Grid - Updated responsive layout */}
+        {/* Products Grid */}
         {filteredProducts.length > 0 ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 gap-y-6 px-4">
             {filteredProducts.map((product) => (
@@ -112,9 +136,19 @@ const Products = () => {
           </div>
         ) : (
           <div className="text-center py-16">
-            <div className="text-6xl mb-4">🔍</div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Produk Tidak Ditemukan</h2>
-            <p className="text-gray-600">Coba gunakan kata kunci yang berbeda atau pilih kategori lain</p>
+            {products.length === 0 ? (
+              <>
+                <div className="text-6xl mb-4">📦</div>
+                <h2 className="text-2xl font-bold text-gray-900 mb-4">Belum Ada Produk</h2>
+                <p className="text-gray-600">Produk akan segera ditambahkan</p>
+              </>
+            ) : (
+              <>
+                <div className="text-6xl mb-4">🔍</div>
+                <h2 className="text-2xl font-bold text-gray-900 mb-4">Produk Tidak Ditemukan</h2>
+                <p className="text-gray-600">Coba gunakan kata kunci yang berbeda atau pilih kategori lain</p>
+              </>
+            )}
           </div>
         )}
       </div>
