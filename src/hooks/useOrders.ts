@@ -19,7 +19,7 @@ export const useOrders = () => {
 
       return data?.map(order => ({
         ...order,
-        items: order.items as OrderItem[],
+        items: order.items as unknown as OrderItem[],
         customer_info: order.customer_info as Order['customer_info'],
         status: order.status as Order['status']
       })) || [];
