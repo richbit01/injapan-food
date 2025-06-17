@@ -1,19 +1,20 @@
 
 import { useState } from 'react';
-import { useAuth } from '@/hooks/useAuth';
+import { useFirebaseAuth } from '@/hooks/useFirebaseAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
+import { Separator } from '@/components/ui/separator';
 
 const AuthForm = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
-  const { signIn, signUp } = useAuth();
+  const { signIn, signUp, signInWithGoogle, signInWithFacebook } = useFirebaseAuth();
   const { toast } = useToast();
 
   const handleSignIn = async (e: React.FormEvent) => {
@@ -47,6 +48,8 @@ const AuthForm = () => {
           title: "Berhasil!",
           description: "Anda berhasil masuk.",
         });
+        // Redirect will be handled by the auth state change
+        window.location.href = '/';
       }
     } catch (error) {
       console.error('Sign in catch error:', error);
@@ -71,12 +74,14 @@ const AuthForm = () => {
         console.error('Sign up error:', error);
         let errorMessage = "Terjadi kesalahan saat mendaftar.";
         
-        if (error.message.includes("already registered")) {
+        if (error.message.includes("already registered") || error.code === "auth/email-already-in-use") {
           errorMessage = "Email sudah terdaftar. Silakan gunakan email lain atau masuk.";
         } else if (error.message.includes("email_address_invalid")) {
           errorMessage = "Format email tidak valid. Silakan gunakan email yang benar (contoh: nama@gmail.com).";
         } else if (error.message.includes("Email address")) {
           errorMessage = "Email tidak valid. Silakan gunakan email yang benar.";
+        } else if (error.code === "auth/weak-password") {
+          errorMessage = "Password terlalu lemah. Gunakan minimal 6 karakter.";
         } else {
           errorMessage = error.message;
         }
@@ -89,14 +94,78 @@ const AuthForm = () => {
       } else {
         toast({
           title: "Berhasil!",
-          description: "Akun berhasil dibuat. Silakan cek email untuk verifikasi.",
+          description: "Akun berhasil dibuat. Silakan masuk dengan akun Anda.",
         });
+        // Clear form and switch to sign in tab
+        setEmail('');
+        setPassword('');
+        setFullName('');
       }
     } catch (error) {
       console.error('Sign up catch error:', error);
       toast({
         title: "Error",
         description: "Terjadi kesalahan saat mendaftar.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setLoading(true);
+    try {
+      const { error } = await signInWithGoogle();
+      if (error) {
+        console.error('Google sign in error:', error);
+        toast({
+          title: "Error",
+          description: "Terjadi kesalahan saat masuk dengan Google.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Berhasil!",
+          description: "Anda berhasil masuk dengan Google.",
+        });
+        window.location.href = '/';
+      }
+    } catch (error) {
+      console.error('Google sign in catch error:', error);
+      toast({
+        title: "Error",
+        description: "Terjadi kesalahan saat masuk dengan Google.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFacebookSignIn = async () => {
+    setLoading(true);
+    try {
+      const { error } = await signInWithFacebook();
+      if (error) {
+        console.error('Facebook sign in error:', error);
+        toast({
+          title: "Error",
+          description: "Terjadi kesalahan saat masuk dengan Facebook.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Berhasil!",
+          description: "Anda berhasil masuk dengan Facebook.",
+        });
+        window.location.href = '/';
+      }
+    } catch (error) {
+      console.error('Facebook sign in catch error:', error);
+      toast({
+        title: "Error",
+        description: "Terjadi kesalahan saat masuk dengan Facebook.",
         variant: "destructive",
       });
     } finally {
@@ -133,7 +202,7 @@ const AuthForm = () => {
                   Masukkan email dan password untuk masuk
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-4">
                 <form onSubmit={handleSignIn} className="space-y-4">
                   <div>
                     <Label htmlFor="signin-email">Email</Label>
@@ -165,6 +234,34 @@ const AuthForm = () => {
                     {loading ? "Memproses..." : "Masuk"}
                   </Button>
                 </form>
+
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <Separator className="w-full" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-white px-2 text-muted-foreground">
+                      Atau masuk dengan
+                    </span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <Button 
+                    variant="outline" 
+                    onClick={handleGoogleSignIn}
+                    disabled={loading}
+                  >
+                    Google
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    onClick={handleFacebookSignIn}
+                    disabled={loading}
+                  >
+                    Facebook
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -177,7 +274,7 @@ const AuthForm = () => {
                   Daftar untuk mulai berbelanja
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-4">
                 <form onSubmit={handleSignUp} className="space-y-4">
                   <div>
                     <Label htmlFor="signup-name">Nama Lengkap</Label>
@@ -221,6 +318,34 @@ const AuthForm = () => {
                     {loading ? "Memproses..." : "Daftar"}
                   </Button>
                 </form>
+
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <Separator className="w-full" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-white px-2 text-muted-foreground">
+                      Atau daftar dengan
+                    </span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <Button 
+                    variant="outline" 
+                    onClick={handleGoogleSignIn}
+                    disabled={loading}
+                  >
+                    Google
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    onClick={handleFacebookSignIn}
+                    disabled={loading}
+                  >
+                    Facebook
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>

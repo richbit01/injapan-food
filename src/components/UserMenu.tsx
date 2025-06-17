@@ -1,6 +1,6 @@
 
 import { LogOut, User, ShoppingBag, Settings, Percent } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
+import { useFirebaseAuth } from '@/hooks/useFirebaseAuth';
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -15,17 +15,18 @@ import {
 import { Button } from '@/components/ui/button';
 
 const UserMenu = () => {
-  const { user, signOut } = useAuth();
+  const { user, signOut } = useFirebaseAuth();
   const navigate = useNavigate();
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     const checkAdminStatus = async () => {
       if (user) {
+        // For Firebase users, check by firebase_uid
         const { data } = await supabase
           .from('profiles')
           .select('role')
-          .eq('id', user.id)
+          .eq('firebase_uid', user.uid)
           .single();
         
         setIsAdmin(data?.role === 'admin');
@@ -66,7 +67,7 @@ const UserMenu = () => {
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuLabel>
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium">{user.user_metadata?.full_name || 'User'}</p>
+            <p className="text-sm font-medium">{user.displayName || 'User'}</p>
             <p className="text-xs text-muted-foreground">{user.email}</p>
           </div>
         </DropdownMenuLabel>
