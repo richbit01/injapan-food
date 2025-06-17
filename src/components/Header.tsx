@@ -24,7 +24,7 @@ const Header = ({ shouldAnimateCart = false }: HeaderProps) => {
     { path: '/products', label: 'Produk' },
     { path: '/how-to-buy', label: 'Cara Membeli' },
     // Add referral menu item only for authenticated users
-    ...(user ? [{ path: '/referral', label: 'Referral' }] : []),
+    ...(user ? [{ path: '/referral', label: 'Affiliate' }] : []),
   ];
 
   return (
