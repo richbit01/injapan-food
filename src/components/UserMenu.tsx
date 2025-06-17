@@ -1,5 +1,5 @@
 
-import { LogOut, User, ShoppingBag, Settings } from 'lucide-react';
+import { LogOut, User, ShoppingBag, Settings, Percent } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
@@ -47,6 +47,10 @@ const UserMenu = () => {
     navigate('/orders');
   };
 
+  const handleReferralClick = () => {
+    navigate('/referral');
+  };
+
   const handleAdminClick = () => {
     navigate('/admin');
   };
@@ -70,6 +74,10 @@ const UserMenu = () => {
         <DropdownMenuItem onClick={handleOrdersClick}>
           <ShoppingBag className="mr-2 h-4 w-4" />
           <span>Pesanan Saya</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={handleReferralClick}>
+          <Percent className="mr-2 h-4 w-4" />
+          <span>Dashboard Referral</span>
         </DropdownMenuItem>
         {isAdmin && (
           <>

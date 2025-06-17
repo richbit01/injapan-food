@@ -34,7 +34,7 @@ export const useUserReferralCode = () => {
       if (!user?.id) return null;
 
       const { data, error } = await supabase
-        .from('referral_codes' as any)
+        .from('referral_codes')
         .select('*')
         .eq('user_id', user.id)
         .eq('is_active', true)
@@ -63,7 +63,7 @@ export const useCreateReferralCode = () => {
       const code = `REF${user.id.slice(0, 8).toUpperCase()}${Date.now().toString().slice(-4)}`;
 
       const { data, error } = await supabase
-        .from('referral_codes' as any)
+        .from('referral_codes')
         .insert({
           user_id: user.id,
           code: code,
@@ -94,7 +94,7 @@ export const useReferralTransactions = () => {
       if (!user?.id) return [];
 
       const { data, error } = await supabase
-        .from('referral_transactions' as any)
+        .from('referral_transactions')
         .select('*')
         .eq('referrer_id', user.id)
         .order('created_at', { ascending: false });
@@ -114,7 +114,7 @@ export const useValidateReferralCode = () => {
   return useMutation({
     mutationFn: async (code: string): Promise<ReferralCode | null> => {
       const { data, error } = await supabase
-        .from('referral_codes' as any)
+        .from('referral_codes')
         .select('*')
         .eq('code', code)
         .eq('is_active', true)
@@ -149,7 +149,7 @@ export const useCreateReferralTransaction = () => {
     }) => {
       // First get the referrer from the code
       const { data: codeData } = await supabase
-        .from('referral_codes' as any)
+        .from('referral_codes')
         .select('user_id')
         .eq('code', referralCode)
         .eq('is_active', true)
@@ -161,7 +161,7 @@ export const useCreateReferralTransaction = () => {
 
       // Create the transaction
       const { data, error } = await supabase
-        .from('referral_transactions' as any)
+        .from('referral_transactions')
         .insert({
           referrer_id: codeData.user_id,
           referred_user_id: referredUserId || null,
@@ -179,14 +179,11 @@ export const useCreateReferralTransaction = () => {
         throw error;
       }
 
-      // Update referral code stats
-      await supabase
-        .from('referral_codes' as any)
-        .update({
-          total_uses: supabase.sql`total_uses + 1`,
-          total_commission_earned: supabase.sql`total_commission_earned + ${commissionAmount}`
-        })
-        .eq('code', referralCode);
+      // Update referral code stats with raw SQL functions
+      await supabase.rpc('increment_referral_stats', {
+        referral_code: referralCode,
+        commission_amount: commissionAmount
+      });
 
       return data as ReferralTransaction;
     },

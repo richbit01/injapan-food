@@ -23,6 +23,8 @@ const Header = ({ shouldAnimateCart = false }: HeaderProps) => {
     { path: '/', label: 'Beranda' },
     { path: '/products', label: 'Produk' },
     { path: '/how-to-buy', label: 'Cara Membeli' },
+    // Add referral menu item only for authenticated users
+    ...(user ? [{ path: '/referral', label: 'Referral' }] : []),
   ];
 
   return (
