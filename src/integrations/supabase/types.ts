@@ -191,7 +191,7 @@ export type Database = {
           created_at?: string
           firebase_uid?: string | null
           full_name?: string | null
-          id: string
+          id?: string
           phone?: string | null
           role?: string | null
           updated_at?: string
