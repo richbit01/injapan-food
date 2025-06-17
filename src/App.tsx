@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -25,6 +24,7 @@ import ImportExport from "./pages/admin/ImportExport";
 import RecycleBin from "./pages/admin/RecycleBin";
 import AdminLogs from "./pages/admin/AdminLogs";
 import ReferralSettings from "./pages/admin/ReferralSettings";
+import ReferralPanelPage from "./pages/admin/ReferralPanel";
 
 const queryClient = new QueryClient();
 
@@ -57,6 +57,7 @@ function App() {
               <Route path="/admin/import-export" element={<ImportExport />} />
               <Route path="/admin/recycle-bin" element={<RecycleBin />} />
               <Route path="/admin/logs" element={<AdminLogs />} />
+              <Route path="/admin/referral-panel" element={<ReferralPanelPage />} />
               
               {/* 404 Route */}
               <Route path="*" element={<NotFound />} />

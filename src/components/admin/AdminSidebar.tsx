@@ -37,6 +37,11 @@ const AdminSidebar = () => {
       path: '/admin/orders'
     },
     {
+      title: 'Panel Referral',
+      icon: Users,
+      path: '/admin/referral-panel'
+    },
+    {
       title: 'Pengaturan Referral',
       icon: Percent,
       path: '/admin/referral-settings'
