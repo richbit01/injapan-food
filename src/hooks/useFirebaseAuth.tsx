@@ -105,17 +105,40 @@ export const FirebaseAuthProvider = ({ children }: { children: React.ReactNode }
 
   const signInWithGoogle = async () => {
     try {
-      await signInWithPopup(auth, googleProvider);
+      console.log('Attempting Google sign in...');
+      console.log('Google provider config:', googleProvider);
+      
+      const result = await signInWithPopup(auth, googleProvider);
+      console.log('Google sign in successful:', result.user.email);
+      
       return { error: null };
     } catch (error: any) {
-      console.error('Google sign in error:', error);
+      console.error('Google sign in error details:', {
+        code: error.code,
+        message: error.message,
+        customData: error.customData,
+        operationType: error.operationType
+      });
+      
+      // Handle specific Google auth errors
+      if (error.code === 'auth/popup-closed-by-user') {
+        return { error: { message: 'Login dibatalkan oleh pengguna' } };
+      } else if (error.code === 'auth/popup-blocked') {
+        return { error: { message: 'Popup diblokir oleh browser. Silakan izinkan popup dan coba lagi.' } };
+      } else if (error.code === 'auth/unauthorized-domain') {
+        return { error: { message: 'Domain tidak diotorisasi untuk Google Auth' } };
+      }
+      
       return { error };
     }
   };
 
   const signInWithFacebook = async () => {
     try {
-      await signInWithPopup(auth, facebookProvider);
+      console.log('Attempting Facebook sign in...');
+      const result = await signInWithPopup(auth, facebookProvider);
+      console.log('Facebook sign in successful:', result.user.email);
+      
       return { error: null };
     } catch (error: any) {
       console.error('Facebook sign in error:', error);
