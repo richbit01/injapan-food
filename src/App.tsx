@@ -12,6 +12,7 @@ import Cart from "./pages/Cart";
 import Orders from "./pages/Orders";
 import Auth from "./pages/Auth";
 import HowToBuy from "./pages/HowToBuy";
+import Referral from "./pages/Referral";
 import NotFound from "./pages/NotFound";
 
 // Admin pages
@@ -44,6 +45,7 @@ function App() {
               <Route path="/orders" element={<Orders />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/how-to-buy" element={<HowToBuy />} />
+              <Route path="/referral" element={<Referral />} />
               
               {/* Admin Routes */}
               <Route path="/admin" element={<AdminDashboard />} />

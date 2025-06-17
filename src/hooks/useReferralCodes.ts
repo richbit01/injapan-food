@@ -34,18 +34,18 @@ export const useUserReferralCode = () => {
       if (!user?.id) return null;
 
       const { data, error } = await supabase
-        .from('referral_codes')
+        .from('referral_codes' as any)
         .select('*')
         .eq('user_id', user.id)
         .eq('is_active', true)
-        .single();
+        .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') {
+      if (error) {
         console.error('Error fetching referral code:', error);
         throw error;
       }
 
-      return data || null;
+      return data as ReferralCode || null;
     },
     enabled: !!user?.id,
   });
@@ -63,7 +63,7 @@ export const useCreateReferralCode = () => {
       const code = `REF${user.id.slice(0, 8).toUpperCase()}${Date.now().toString().slice(-4)}`;
 
       const { data, error } = await supabase
-        .from('referral_codes')
+        .from('referral_codes' as any)
         .insert({
           user_id: user.id,
           code: code,
@@ -77,7 +77,7 @@ export const useCreateReferralCode = () => {
         throw error;
       }
 
-      return data;
+      return data as ReferralCode;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user-referral-code'] });
@@ -94,7 +94,7 @@ export const useReferralTransactions = () => {
       if (!user?.id) return [];
 
       const { data, error } = await supabase
-        .from('referral_transactions')
+        .from('referral_transactions' as any)
         .select('*')
         .eq('referrer_id', user.id)
         .order('created_at', { ascending: false });
@@ -104,7 +104,7 @@ export const useReferralTransactions = () => {
         throw error;
       }
 
-      return data || [];
+      return (data as ReferralTransaction[]) || [];
     },
     enabled: !!user?.id,
   });
@@ -114,18 +114,85 @@ export const useValidateReferralCode = () => {
   return useMutation({
     mutationFn: async (code: string): Promise<ReferralCode | null> => {
       const { data, error } = await supabase
-        .from('referral_codes')
+        .from('referral_codes' as any)
         .select('*')
         .eq('code', code)
         .eq('is_active', true)
-        .single();
+        .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') {
+      if (error) {
         console.error('Error validating referral code:', error);
         throw error;
       }
 
-      return data || null;
+      return data as ReferralCode || null;
+    },
+  });
+};
+
+export const useCreateReferralTransaction = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      referralCode,
+      orderId,
+      orderTotal,
+      commissionAmount,
+      referredUserId
+    }: {
+      referralCode: string;
+      orderId: string;
+      orderTotal: number;
+      commissionAmount: number;
+      referredUserId?: string;
+    }) => {
+      // First get the referrer from the code
+      const { data: codeData } = await supabase
+        .from('referral_codes' as any)
+        .select('user_id')
+        .eq('code', referralCode)
+        .eq('is_active', true)
+        .single();
+
+      if (!codeData) {
+        throw new Error('Invalid referral code');
+      }
+
+      // Create the transaction
+      const { data, error } = await supabase
+        .from('referral_transactions' as any)
+        .insert({
+          referrer_id: codeData.user_id,
+          referred_user_id: referredUserId || null,
+          referral_code: referralCode,
+          order_id: orderId,
+          commission_amount: commissionAmount,
+          order_total: orderTotal,
+          status: 'pending'
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating referral transaction:', error);
+        throw error;
+      }
+
+      // Update referral code stats
+      await supabase
+        .from('referral_codes' as any)
+        .update({
+          total_uses: supabase.sql`total_uses + 1`,
+          total_commission_earned: supabase.sql`total_commission_earned + ${commissionAmount}`
+        })
+        .eq('code', referralCode);
+
+      return data as ReferralTransaction;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['referral-transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['user-referral-code'] });
     },
   });
 };

@@ -231,6 +231,72 @@ export type Database = {
         }
         Relationships: []
       }
+      referral_codes: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          is_active: boolean
+          total_commission_earned: number
+          total_uses: number
+          user_id: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          total_commission_earned?: number
+          total_uses?: number
+          user_id: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          total_commission_earned?: number
+          total_uses?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      referral_transactions: {
+        Row: {
+          commission_amount: number
+          created_at: string
+          id: string
+          order_id: string
+          order_total: number
+          referral_code: string
+          referred_user_id: string | null
+          referrer_id: string
+          status: string
+        }
+        Insert: {
+          commission_amount: number
+          created_at?: string
+          id?: string
+          order_id: string
+          order_total: number
+          referral_code: string
+          referred_user_id?: string | null
+          referrer_id: string
+          status?: string
+        }
+        Update: {
+          commission_amount?: number
+          created_at?: string
+          id?: string
+          order_id?: string
+          order_total?: number
+          referral_code?: string
+          referred_user_id?: string | null
+          referrer_id?: string
+          status?: string
+        }
+        Relationships: []
+      }
       settings_history: {
         Row: {
           changed_at: string
