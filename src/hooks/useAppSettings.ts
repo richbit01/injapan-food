@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -59,9 +58,16 @@ export const useReferralCommissionRate = () => {
         throw error;
       }
 
-      // Type guard to safely access the rate property
-      const value = data?.value as ReferralCommissionValue;
-      return value?.rate || 3;
+      // Safe type conversion with proper error handling
+      try {
+        const value = data?.value as unknown;
+        if (value && typeof value === 'object' && 'rate' in value) {
+          return (value as ReferralCommissionValue).rate;
+        }
+        return 3; // Default fallback
+      } catch {
+        return 3; // Default fallback
+      }
     },
   });
 };
