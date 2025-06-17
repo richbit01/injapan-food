@@ -8,10 +8,12 @@ import { prefectures } from '@/data/prefectures';
 import WhatsAppButton from '@/components/WhatsAppButton';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import ReferralCodeInput from '@/components/ReferralCodeInput';
 
 const Cart = () => {
   const { cart, updateQuantity, removeFromCart, total, clearCart } = useCart();
   const [showCheckout, setShowCheckout] = useState(false);
+  const [referralCode, setReferralCode] = useState<string | null>(null);
   const [customerInfo, setCustomerInfo] = useState({
     name: '',
     prefecture: '',
@@ -32,6 +34,7 @@ const Cart = () => {
   const handleCheckoutSuccess = () => {
     clearCart();
     setShowCheckout(false);
+    setReferralCode(null);
     setCustomerInfo({
       name: '',
       prefecture: '',
@@ -203,6 +206,12 @@ const Cart = () => {
                     onChange={(e) => setCustomerInfo({...customerInfo, phone: e.target.value})}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary"
                   />
+
+                  {/* Referral Code Input */}
+                  <ReferralCodeInput
+                    onReferralCodeChange={setReferralCode}
+                    initialCode=""
+                  />
                   
                   <textarea
                     placeholder="Catatan Tambahan (Opsional)"
@@ -217,6 +226,7 @@ const Cart = () => {
                       cart={cart}
                       total={total}
                       customerInfo={customerInfo}
+                      referralCode={referralCode}
                       onSuccess={handleCheckoutSuccess}
                     />
                   ) : (
