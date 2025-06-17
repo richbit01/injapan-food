@@ -78,6 +78,7 @@ const SupabaseTest = () => {
       const { data, error } = await supabase
         .from('profiles')
         .insert({
+          id: crypto.randomUUID(),
           firebase_uid: user.uid,
           full_name: user.displayName || 'Test User',
           role: 'admin'
