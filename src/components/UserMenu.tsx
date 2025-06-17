@@ -22,14 +22,22 @@ const UserMenu = () => {
   useEffect(() => {
     const checkAdminStatus = async () => {
       if (user) {
-        // For Firebase users, check by firebase_uid
-        const { data } = await supabase
+        console.log('UserMenu: Checking admin status for Firebase user:', user.uid);
+        
+        // Check admin status using firebase_uid
+        const { data, error } = await supabase
           .from('profiles')
           .select('role')
           .eq('firebase_uid', user.uid)
           .single();
         
-        setIsAdmin(data?.role === 'admin');
+        if (error) {
+          console.error('UserMenu: Error checking admin status:', error);
+          setIsAdmin(false);
+        } else {
+          console.log('UserMenu: Admin check result:', data);
+          setIsAdmin(data?.role === 'admin');
+        }
       }
     };
 

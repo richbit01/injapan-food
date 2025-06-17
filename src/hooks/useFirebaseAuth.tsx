@@ -46,34 +46,48 @@ export const FirebaseAuthProvider = ({ children }: { children: React.ReactNode }
 
   const syncUserToSupabase = async (firebaseUser: User) => {
     try {
+      console.log('Syncing Firebase user to Supabase:', firebaseUser.uid);
+      
       // Check if user already exists in Supabase profiles table
-      const { data: existingProfile } = await supabase
+      const { data: existingProfile, error: checkError } = await supabase
         .from('profiles')
         .select('*')
         .eq('firebase_uid', firebaseUser.uid)
-        .single();
+        .maybeSingle();
+
+      if (checkError) {
+        console.error('Error checking existing profile:', checkError);
+        return;
+      }
 
       if (!existingProfile) {
-        // Generate a UUID for the Supabase profile
+        console.log('Creating new Supabase profile for Firebase user');
+        
+        // Try to create profile without RLS restrictions
+        // We'll use a direct insert since this is during the auth process
         const { data, error } = await supabase
           .from('profiles')
           .insert({
             id: crypto.randomUUID(),
             firebase_uid: firebaseUser.uid,
             full_name: firebaseUser.displayName || '',
-            role: 'user'
+            role: 'user' // Default role, can be changed manually to 'admin'
           })
           .select()
           .single();
 
         if (error) {
           console.error('Error creating Supabase profile:', error);
+          // Don't throw error, just log it - user can still use the app
         } else {
           console.log('Created Supabase profile:', data);
         }
+      } else {
+        console.log('Supabase profile already exists:', existingProfile);
       }
     } catch (error) {
       console.error('Error syncing user to Supabase:', error);
+      // Don't throw error, just log it - user can still use the app
     }
   };
 
