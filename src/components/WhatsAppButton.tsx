@@ -15,10 +15,11 @@ interface WhatsAppButtonProps {
     phone: string;
     notes: string;
   };
+  referralCode?: string | null;
   onSuccess: () => void;
 }
 
-const WhatsAppButton = ({ cart, total, customerInfo, onSuccess }: WhatsAppButtonProps) => {
+const WhatsAppButton = ({ cart, total, customerInfo, referralCode, onSuccess }: WhatsAppButtonProps) => {
   const handleWhatsAppOrder = () => {
     if (cart.length === 0) {
       alert('Keranjang kosong! Silakan tambahkan produk terlebih dahulu.');
@@ -45,13 +46,15 @@ Alamat: ${customerInfo.address}
 No HP: ${customerInfo.phone}
 ${customerInfo.notes ? `Catatan: ${customerInfo.notes}` : ''}`;
 
+    const referralInfo = referralCode ? `\nKode Referral: ${referralCode}` : '';
+
     const message = `Halo! Saya ingin memesan:
 
 ${orderText}
 
 Total: ${formatPrice(total)}
 
-Informasi Pengiriman:${customerDetails}
+Informasi Pengiriman:${customerDetails}${referralInfo}
 
 Terima kasih!`;
     
