@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,6 +13,9 @@ const ReferralDashboard = () => {
   const createCode = useCreateReferralCode();
   const { toast } = useToast();
 
+  // Use production domain instead of current location
+  const baseUrl = 'https://injapanfood.com'; // Change this to your actual domain
+  
   const [shareUrl, setShareUrl] = useState('');
 
   const handleCreateCode = async () => {
@@ -44,7 +46,7 @@ const ReferralDashboard = () => {
 
   const handleCopyLink = () => {
     if (referralCode) {
-      const url = `${window.location.origin}?ref=${referralCode.code}`;
+      const url = `${baseUrl}?ref=${referralCode.code}`;
       navigator.clipboard.writeText(url);
       toast({
         title: 'Berhasil!',
@@ -134,7 +136,7 @@ const ReferralDashboard = () => {
                 <label className="text-sm font-medium">Link Referral</label>
                 <div className="flex items-center space-x-2 mt-1">
                   <Input 
-                    value={`${window.location.origin}?ref=${referralCode.code}`} 
+                    value={`${baseUrl}?ref=${referralCode.code}`} 
                     readOnly 
                   />
                   <Button variant="outline" size="sm" onClick={handleCopyLink}>
