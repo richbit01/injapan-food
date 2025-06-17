@@ -16,6 +16,52 @@ const AuthForm = () => {
   const { signIn, signUp } = useFirebaseAuth();
   const { toast } = useToast();
 
+  const getFirebaseErrorMessage = (error: any) => {
+    const errorCode = error?.code || '';
+    const errorMessage = error?.message || '';
+
+    // Handle Firebase Auth specific errors
+    switch (errorCode) {
+      case 'auth/invalid-credential':
+      case 'auth/wrong-password':
+      case 'auth/user-not-found':
+        return 'Email atau password yang Anda masukkan salah. Silakan periksa kembali data Anda.';
+      
+      case 'auth/invalid-email':
+        return 'Format email tidak valid. Silakan masukkan alamat email yang benar.';
+      
+      case 'auth/user-disabled':
+        return 'Akun Anda telah dinonaktifkan. Silakan hubungi customer service kami untuk bantuan.';
+      
+      case 'auth/too-many-requests':
+        return 'Terlalu banyak percobaan login. Silakan coba lagi dalam beberapa menit.';
+      
+      case 'auth/network-request-failed':
+        return 'Koneksi internet bermasalah. Silakan periksa koneksi Anda dan coba lagi.';
+      
+      case 'auth/email-already-in-use':
+        return 'Email ini sudah terdaftar. Silakan gunakan email lain atau masuk dengan akun yang sudah ada.';
+      
+      case 'auth/weak-password':
+        return 'Password terlalu lemah. Gunakan minimal 6 karakter dengan kombinasi huruf dan angka.';
+      
+      case 'auth/operation-not-allowed':
+        return 'Metode login ini sedang tidak tersedia. Silakan hubungi customer service kami.';
+      
+      default:
+        // Handle other common error messages
+        if (errorMessage.includes('Invalid login credentials')) {
+          return 'Email atau password yang Anda masukkan salah. Silakan periksa kembali data Anda.';
+        } else if (errorMessage.includes('email_address_invalid')) {
+          return 'Format email tidak valid. Silakan masukkan alamat email yang benar.';
+        } else if (errorMessage.includes('Email address')) {
+          return 'Alamat email tidak valid atau tidak terdaftar dalam sistem kami.';
+        }
+        
+        return 'Terjadi kesalahan pada sistem. Silakan coba lagi atau hubungi customer service kami jika masalah berlanjut.';
+    }
+  };
+
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -25,27 +71,17 @@ const AuthForm = () => {
       const { error } = await signIn(email, password);
       if (error) {
         console.error('Sign in error:', error);
-        let errorMessage = "Terjadi kesalahan saat masuk.";
-        
-        if (error.message === "Invalid login credentials") {
-          errorMessage = "Email atau password salah. Silakan coba lagi.";
-        } else if (error.message.includes("email_address_invalid")) {
-          errorMessage = "Format email tidak valid. Silakan gunakan email yang benar.";
-        } else if (error.message.includes("Email address")) {
-          errorMessage = "Email tidak valid atau tidak terdaftar.";
-        } else {
-          errorMessage = error.message;
-        }
+        const errorMessage = getFirebaseErrorMessage(error);
         
         toast({
-          title: "Error",
+          title: "Login Gagal",
           description: errorMessage,
           variant: "destructive",
         });
       } else {
         toast({
-          title: "Berhasil!",
-          description: "Anda berhasil masuk.",
+          title: "Login Berhasil",
+          description: "Selamat datang! Anda berhasil masuk ke akun Anda.",
         });
         // Redirect will be handled by the auth state change
         window.location.href = '/';
@@ -53,8 +89,8 @@ const AuthForm = () => {
     } catch (error) {
       console.error('Sign in catch error:', error);
       toast({
-        title: "Error",
-        description: "Terjadi kesalahan saat masuk.",
+        title: "Login Gagal",
+        description: "Terjadi kesalahan pada sistem. Silakan coba lagi atau hubungi customer service kami.",
         variant: "destructive",
       });
     } finally {
@@ -71,29 +107,17 @@ const AuthForm = () => {
       const { error } = await signUp(email, password, fullName);
       if (error) {
         console.error('Sign up error:', error);
-        let errorMessage = "Terjadi kesalahan saat mendaftar.";
-        
-        if (error.message.includes("already registered") || error.code === "auth/email-already-in-use") {
-          errorMessage = "Email sudah terdaftar. Silakan gunakan email lain atau masuk.";
-        } else if (error.message.includes("email_address_invalid")) {
-          errorMessage = "Format email tidak valid. Silakan gunakan email yang benar (contoh: nama@gmail.com).";
-        } else if (error.message.includes("Email address")) {
-          errorMessage = "Email tidak valid. Silakan gunakan email yang benar.";
-        } else if (error.code === "auth/weak-password") {
-          errorMessage = "Password terlalu lemah. Gunakan minimal 6 karakter.";
-        } else {
-          errorMessage = error.message;
-        }
+        const errorMessage = getFirebaseErrorMessage(error);
         
         toast({
-          title: "Error",
+          title: "Pendaftaran Gagal",
           description: errorMessage,
           variant: "destructive",
         });
       } else {
         toast({
-          title: "Berhasil!",
-          description: "Akun berhasil dibuat. Silakan masuk dengan akun Anda.",
+          title: "Pendaftaran Berhasil",
+          description: "Akun Anda berhasil dibuat! Selamat datang di Injapan Food.",
         });
         // Clear form and switch to sign in tab
         setEmail('');
@@ -103,8 +127,8 @@ const AuthForm = () => {
     } catch (error) {
       console.error('Sign up catch error:', error);
       toast({
-        title: "Error",
-        description: "Terjadi kesalahan saat mendaftar.",
+        title: "Pendaftaran Gagal",
+        description: "Terjadi kesalahan pada sistem. Silakan coba lagi atau hubungi customer service kami.",
         variant: "destructive",
       });
     } finally {
