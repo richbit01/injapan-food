@@ -54,21 +54,22 @@ export const FirebaseAuthProvider = ({ children }: { children: React.ReactNode }
         .single();
 
       if (!existingProfile) {
-        // Create new profile in Supabase
-        const { error } = await supabase
+        // Generate a UUID for the Supabase profile
+        const { data, error } = await supabase
           .from('profiles')
-          .insert([
-            {
-              firebase_uid: firebaseUser.uid,
-              email: firebaseUser.email,
-              full_name: firebaseUser.displayName || '',
-              role: 'user', // default role
-              created_at: new Date().toISOString()
-            }
-          ]);
+          .insert({
+            id: crypto.randomUUID(),
+            firebase_uid: firebaseUser.uid,
+            full_name: firebaseUser.displayName || '',
+            role: 'user'
+          })
+          .select()
+          .single();
 
         if (error) {
           console.error('Error creating Supabase profile:', error);
+        } else {
+          console.log('Created Supabase profile:', data);
         }
       }
     } catch (error) {
