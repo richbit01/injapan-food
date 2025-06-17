@@ -34,7 +34,10 @@ export const useCheckoutWithReferral = () => {
 
   return useMutation({
     mutationFn: async (checkoutData: CheckoutData) => {
-      console.log('Processing checkout with referral:', checkoutData);
+      console.log('Processing checkout with referral:', {
+        ...checkoutData,
+        items: checkoutData.items.length + ' items'
+      });
 
       // Create the order first
       const { data: order, error: orderError } = await supabase
@@ -54,14 +57,14 @@ export const useCheckoutWithReferral = () => {
         throw orderError;
       }
 
-      console.log('Order created:', order);
+      console.log('Order created successfully:', order.id);
 
       // If there's a referral code, create the referral transaction
       if (checkoutData.referralCode && order) {
         try {
           const commissionAmount = calculateCommission(checkoutData.totalPrice);
           
-          console.log('Creating referral transaction:', {
+          console.log('Processing referral transaction:', {
             referralCode: checkoutData.referralCode,
             orderId: order.id,
             orderTotal: checkoutData.totalPrice,
@@ -77,18 +80,26 @@ export const useCheckoutWithReferral = () => {
             referredUserId: user?.id
           });
 
-          console.log('Referral transaction created successfully');
+          console.log('Referral transaction processed successfully');
         } catch (referralError) {
-          console.error('Error creating referral transaction:', referralError);
-          // Don't fail the order if referral fails, just log it
+          console.error('Error processing referral transaction:', referralError);
+          // Log the error but don't fail the order
+          // You might want to implement a retry mechanism here
         }
+      } else {
+        console.log('No referral code provided, skipping referral processing');
       }
 
       return order;
     },
-    onSuccess: () => {
+    onSuccess: (order) => {
+      console.log('Checkout completed successfully for order:', order.id);
       queryClient.invalidateQueries({ queryKey: ['orders'] });
       queryClient.invalidateQueries({ queryKey: ['referral-transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['user-referral-code'] });
     },
+    onError: (error) => {
+      console.error('Checkout failed:', error);
+    }
   });
 };

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useValidateReferralCode } from '@/hooks/useReferralCodes';
+import { useAuth } from '@/hooks/useAuth';
 import { Check, X } from 'lucide-react';
 
 interface ReferralCodeInputProps {
@@ -18,12 +19,14 @@ const ReferralCodeInput = ({ onReferralCodeChange, initialCode }: ReferralCodeIn
   const [isValid, setIsValid] = useState(false);
   const validateCode = useValidateReferralCode();
   const { toast } = useToast();
+  const { user } = useAuth();
 
   useEffect(() => {
     // Check for referral code in URL on component mount
     const urlParams = new URLSearchParams(window.location.search);
     const refCode = urlParams.get('ref');
     if (refCode && !initialCode) {
+      console.log('Found referral code in URL:', refCode);
       setCode(refCode);
       handleValidateCode(refCode);
     }
@@ -37,12 +40,27 @@ const ReferralCodeInput = ({ onReferralCodeChange, initialCode }: ReferralCodeIn
       return;
     }
 
+    console.log('Validating referral code:', codeToValidate);
+
     try {
       const result = await validateCode.mutateAsync(codeToValidate);
       if (result) {
+        // Check if user is trying to use their own referral code
+        if (user && result.user_id === user.id) {
+          setIsValid(false);
+          setValidatedCode(null);
+          onReferralCodeChange(null);
+          toast({
+            title: 'Kode Tidak Valid',
+            description: 'Anda tidak dapat menggunakan kode referral sendiri',
+            variant: 'destructive',
+          });
+          return;
+        }
+
         setIsValid(true);
-        setValidatedCode(codeToValidate);
-        onReferralCodeChange(codeToValidate);
+        setValidatedCode(codeToValidate.trim().toUpperCase());
+        onReferralCodeChange(codeToValidate.trim().toUpperCase());
         toast({
           title: 'Kode Referral Valid!',
           description: 'Anda akan mendapat manfaat dari referral ini',
@@ -58,6 +76,7 @@ const ReferralCodeInput = ({ onReferralCodeChange, initialCode }: ReferralCodeIn
         });
       }
     } catch (error) {
+      console.error('Error validating referral code:', error);
       setIsValid(false);
       setValidatedCode(null);
       onReferralCodeChange(null);
@@ -74,6 +93,7 @@ const ReferralCodeInput = ({ onReferralCodeChange, initialCode }: ReferralCodeIn
     setIsValid(false);
     setValidatedCode(null);
     onReferralCodeChange(null);
+    console.log('Referral code cleared');
   };
 
   return (
@@ -86,9 +106,10 @@ const ReferralCodeInput = ({ onReferralCodeChange, initialCode }: ReferralCodeIn
           <div className="flex-1 relative">
             <Input
               value={code}
-              onChange={(e) => setCode(e.target.value)}
+              onChange={(e) => setCode(e.target.value.toUpperCase())}
               placeholder="Masukkan kode referral..."
               disabled={validateCode.isPending}
+              className={isValid ? 'border-green-500' : ''}
             />
             {isValid && (
               <Check className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-green-600" />

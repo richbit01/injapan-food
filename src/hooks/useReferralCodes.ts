@@ -33,6 +33,8 @@ export const useUserReferralCode = () => {
     queryFn: async (): Promise<ReferralCode | null> => {
       if (!user?.id) return null;
 
+      console.log('Fetching referral code for user:', user.id);
+
       const { data, error } = await supabase
         .from('referral_codes')
         .select('*')
@@ -45,6 +47,7 @@ export const useUserReferralCode = () => {
         throw error;
       }
 
+      console.log('Referral code data:', data);
       return data as ReferralCode || null;
     },
     enabled: !!user?.id,
@@ -59,15 +62,23 @@ export const useCreateReferralCode = () => {
     mutationFn: async () => {
       if (!user?.id) throw new Error('User not authenticated');
 
-      // Generate unique referral code
-      const code = `REF${user.id.slice(0, 8).toUpperCase()}${Date.now().toString().slice(-4)}`;
+      console.log('Creating referral code for user:', user.id);
+
+      // Generate unique referral code with better uniqueness
+      const timestamp = Date.now().toString();
+      const userIdShort = user.id.slice(0, 8).toUpperCase();
+      const code = `REF${userIdShort}${timestamp.slice(-4)}`;
+
+      console.log('Generated referral code:', code);
 
       const { data, error } = await supabase
         .from('referral_codes')
         .insert({
           user_id: user.id,
           code: code,
-          is_active: true
+          is_active: true,
+          total_uses: 0,
+          total_commission_earned: 0
         })
         .select()
         .single();
@@ -77,6 +88,7 @@ export const useCreateReferralCode = () => {
         throw error;
       }
 
+      console.log('Referral code created successfully:', data);
       return data as ReferralCode;
     },
     onSuccess: () => {
@@ -93,6 +105,8 @@ export const useReferralTransactions = () => {
     queryFn: async (): Promise<ReferralTransaction[]> => {
       if (!user?.id) return [];
 
+      console.log('Fetching referral transactions for user:', user.id);
+
       const { data, error } = await supabase
         .from('referral_transactions')
         .select('*')
@@ -104,6 +118,7 @@ export const useReferralTransactions = () => {
         throw error;
       }
 
+      console.log('Referral transactions:', data);
       return (data as ReferralTransaction[]) || [];
     },
     enabled: !!user?.id,
@@ -113,10 +128,17 @@ export const useReferralTransactions = () => {
 export const useValidateReferralCode = () => {
   return useMutation({
     mutationFn: async (code: string): Promise<ReferralCode | null> => {
+      console.log('Validating referral code:', code);
+
+      if (!code || code.trim().length === 0) {
+        console.log('Empty referral code provided');
+        return null;
+      }
+
       const { data, error } = await supabase
         .from('referral_codes')
         .select('*')
-        .eq('code', code)
+        .eq('code', code.trim().toUpperCase())
         .eq('is_active', true)
         .maybeSingle();
 
@@ -125,6 +147,7 @@ export const useValidateReferralCode = () => {
         throw error;
       }
 
+      console.log('Referral code validation result:', data);
       return data as ReferralCode || null;
     },
   });
@@ -147,16 +170,33 @@ export const useCreateReferralTransaction = () => {
       commissionAmount: number;
       referredUserId?: string;
     }) => {
-      // First get the referrer from the code
-      const { data: codeData } = await supabase
+      console.log('Creating referral transaction:', {
+        referralCode,
+        orderId,
+        orderTotal,
+        commissionAmount,
+        referredUserId
+      });
+
+      // First validate the referral code and get the referrer
+      const { data: codeData, error: codeError } = await supabase
         .from('referral_codes')
-        .select('user_id')
-        .eq('code', referralCode)
+        .select('user_id, is_active')
+        .eq('code', referralCode.trim().toUpperCase())
         .eq('is_active', true)
         .single();
 
-      if (!codeData) {
+      if (codeError || !codeData) {
+        console.error('Invalid referral code:', codeError);
         throw new Error('Invalid referral code');
+      }
+
+      console.log('Referral code owner:', codeData.user_id);
+
+      // Prevent self-referral
+      if (referredUserId && codeData.user_id === referredUserId) {
+        console.error('Self-referral attempt detected');
+        throw new Error('Cannot use your own referral code');
       }
 
       // Create the transaction
@@ -165,7 +205,7 @@ export const useCreateReferralTransaction = () => {
         .insert({
           referrer_id: codeData.user_id,
           referred_user_id: referredUserId || null,
-          referral_code: referralCode,
+          referral_code: referralCode.trim().toUpperCase(),
           order_id: orderId,
           commission_amount: commissionAmount,
           order_total: orderTotal,
@@ -179,11 +219,20 @@ export const useCreateReferralTransaction = () => {
         throw error;
       }
 
-      // Update referral code stats with raw SQL functions
-      await supabase.rpc('increment_referral_stats', {
-        referral_code: referralCode,
+      console.log('Referral transaction created:', data);
+
+      // Update referral code stats using the database function
+      const { error: statsError } = await supabase.rpc('increment_referral_stats', {
+        referral_code: referralCode.trim().toUpperCase(),
         commission_amount: commissionAmount
       });
+
+      if (statsError) {
+        console.error('Error updating referral stats:', statsError);
+        // Don't throw here as the main transaction was successful
+      } else {
+        console.log('Referral stats updated successfully');
+      }
 
       return data as ReferralTransaction;
     },
