@@ -108,6 +108,9 @@ export const FirebaseAuthProvider = ({ children }: { children: React.ReactNode }
       console.log('Attempting Google sign in...');
       console.log('Google provider config:', googleProvider);
       
+      // Clear any existing auth state
+      await firebaseSignOut(auth);
+      
       const result = await signInWithPopup(auth, googleProvider);
       console.log('Google sign in successful:', result.user.email);
       
@@ -126,23 +129,43 @@ export const FirebaseAuthProvider = ({ children }: { children: React.ReactNode }
       } else if (error.code === 'auth/popup-blocked') {
         return { error: { message: 'Popup diblokir oleh browser. Silakan izinkan popup dan coba lagi.' } };
       } else if (error.code === 'auth/unauthorized-domain') {
-        return { error: { message: 'Domain tidak diotorisasi untuk Google Auth' } };
+        return { error: { message: 'Domain tidak diotorisasi untuk Google Auth. Silakan hubungi admin.' } };
+      } else if (error.code === 'auth/configuration-not-found') {
+        return { error: { message: 'Konfigurasi Google Auth belum selesai. Silakan hubungi admin.' } };
+      } else if (error.code === 'auth/invalid-api-key') {
+        return { error: { message: 'API key tidak valid. Silakan hubungi admin.' } };
       }
       
-      return { error };
+      return { error: { message: 'Gagal masuk dengan Google. Silakan coba lagi.' } };
     }
   };
 
   const signInWithFacebook = async () => {
     try {
       console.log('Attempting Facebook sign in...');
+      
+      // Clear any existing auth state
+      await firebaseSignOut(auth);
+      
       const result = await signInWithPopup(auth, facebookProvider);
       console.log('Facebook sign in successful:', result.user.email);
       
       return { error: null };
     } catch (error: any) {
       console.error('Facebook sign in error:', error);
-      return { error };
+      
+      // Handle specific Facebook auth errors
+      if (error.code === 'auth/popup-closed-by-user') {
+        return { error: { message: 'Login dibatalkan oleh pengguna' } };
+      } else if (error.code === 'auth/popup-blocked') {
+        return { error: { message: 'Popup diblokir oleh browser. Silakan izinkan popup dan coba lagi.' } };
+      } else if (error.code === 'auth/unauthorized-domain') {
+        return { error: { message: 'Domain tidak diotorisasi untuk Facebook Auth. Silakan hubungi admin.' } };
+      } else if (error.code === 'auth/app-not-authorized') {
+        return { error: { message: 'Aplikasi belum diotorisasi Facebook. Silakan hubungi admin.' } };
+      }
+      
+      return { error: { message: 'Gagal masuk dengan Facebook. Silakan coba lagi.' } };
     }
   };
 
