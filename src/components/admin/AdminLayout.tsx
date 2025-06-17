@@ -19,18 +19,22 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
       if (user) {
         console.log('Checking admin status for Firebase user:', user.uid);
         
-        // Check admin status using firebase_uid
+        // Check admin status using firebase_uid - use maybeSingle to avoid errors
         const { data, error } = await supabase
           .from('profiles')
           .select('role')
           .eq('firebase_uid', user.uid)
-          .single();
+          .maybeSingle();
         
         if (error) {
           console.error('Error checking admin status:', error);
-        } else {
+          setIsAdmin(false);
+        } else if (data) {
           console.log('Admin check result:', data);
-          setIsAdmin(data?.role === 'admin');
+          setIsAdmin(data.role === 'admin');
+        } else {
+          console.log('No profile found for user');
+          setIsAdmin(false);
         }
       }
       setLoading(false);

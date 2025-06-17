@@ -24,19 +24,22 @@ const UserMenu = () => {
       if (user) {
         console.log('UserMenu: Checking admin status for Firebase user:', user.uid);
         
-        // Check admin status using firebase_uid
+        // Check admin status using firebase_uid - use maybeSingle to avoid errors
         const { data, error } = await supabase
           .from('profiles')
           .select('role')
           .eq('firebase_uid', user.uid)
-          .single();
+          .maybeSingle();
         
         if (error) {
           console.error('UserMenu: Error checking admin status:', error);
           setIsAdmin(false);
-        } else {
+        } else if (data) {
           console.log('UserMenu: Admin check result:', data);
-          setIsAdmin(data?.role === 'admin');
+          setIsAdmin(data.role === 'admin');
+        } else {
+          console.log('UserMenu: No profile found for user');
+          setIsAdmin(false);
         }
       }
     };
