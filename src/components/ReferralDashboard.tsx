@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,8 +14,8 @@ const ReferralDashboard = () => {
   const createCode = useCreateReferralCode();
   const { toast } = useToast();
 
-  // Use production domain instead of current location
-  const baseUrl = 'https://injapanfood.com'; // Change this to your actual domain
+  // Use production domain
+  const baseUrl = 'https://bitkode.site';
   
   const [shareUrl, setShareUrl] = useState('');
 
