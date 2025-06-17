@@ -7,14 +7,13 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Separator } from '@/components/ui/separator';
 
 const AuthForm = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
-  const { signIn, signUp, signInWithGoogle, signInWithFacebook } = useFirebaseAuth();
+  const { signIn, signUp } = useFirebaseAuth();
   const { toast } = useToast();
 
   const handleSignIn = async (e: React.FormEvent) => {
@@ -113,66 +112,6 @@ const AuthForm = () => {
     }
   };
 
-  const handleGoogleSignIn = async () => {
-    setLoading(true);
-    try {
-      const { error } = await signInWithGoogle();
-      if (error) {
-        console.error('Google sign in error:', error);
-        toast({
-          title: "Error",
-          description: "Terjadi kesalahan saat masuk dengan Google.",
-          variant: "destructive",
-        });
-      } else {
-        toast({
-          title: "Berhasil!",
-          description: "Anda berhasil masuk dengan Google.",
-        });
-        window.location.href = '/';
-      }
-    } catch (error) {
-      console.error('Google sign in catch error:', error);
-      toast({
-        title: "Error",
-        description: "Terjadi kesalahan saat masuk dengan Google.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleFacebookSignIn = async () => {
-    setLoading(true);
-    try {
-      const { error } = await signInWithFacebook();
-      if (error) {
-        console.error('Facebook sign in error:', error);
-        toast({
-          title: "Error",
-          description: "Terjadi kesalahan saat masuk dengan Facebook.",
-          variant: "destructive",
-        });
-      } else {
-        toast({
-          title: "Berhasil!",
-          description: "Anda berhasil masuk dengan Facebook.",
-        });
-        window.location.href = '/';
-      }
-    } catch (error) {
-      console.error('Facebook sign in catch error:', error);
-      toast({
-        title: "Error",
-        description: "Terjadi kesalahan saat masuk dengan Facebook.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
@@ -234,34 +173,6 @@ const AuthForm = () => {
                     {loading ? "Memproses..." : "Masuk"}
                   </Button>
                 </form>
-
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <Separator className="w-full" />
-                  </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-white px-2 text-muted-foreground">
-                      Atau masuk dengan
-                    </span>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <Button 
-                    variant="outline" 
-                    onClick={handleGoogleSignIn}
-                    disabled={loading}
-                  >
-                    Google
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    onClick={handleFacebookSignIn}
-                    disabled={loading}
-                  >
-                    Facebook
-                  </Button>
-                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -318,34 +229,6 @@ const AuthForm = () => {
                     {loading ? "Memproses..." : "Daftar"}
                   </Button>
                 </form>
-
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <Separator className="w-full" />
-                  </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-white px-2 text-muted-foreground">
-                      Atau daftar dengan
-                    </span>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <Button 
-                    variant="outline" 
-                    onClick={handleGoogleSignIn}
-                    disabled={loading}
-                  >
-                    Google
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    onClick={handleFacebookSignIn}
-                    disabled={loading}
-                  >
-                    Facebook
-                  </Button>
-                </div>
               </CardContent>
             </Card>
           </TabsContent>
