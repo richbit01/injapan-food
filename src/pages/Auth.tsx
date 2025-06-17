@@ -1,16 +1,19 @@
 
 import AuthForm from '@/components/AuthForm';
-import SupabaseTest from '@/components/SupabaseTest';
 import { useFirebaseAuth } from '@/hooks/useFirebaseAuth';
+import { useEffect } from 'react';
 
 const Auth = () => {
   const { user } = useFirebaseAuth();
   
-  // Show test component if user is logged in
-  if (user) {
-    return <SupabaseTest />;
-  }
+  // Redirect to home page if user is logged in
+  useEffect(() => {
+    if (user) {
+      window.location.href = '/';
+    }
+  }, [user]);
   
+  // Only show auth form if no user
   return <AuthForm />;
 };
 
