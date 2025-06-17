@@ -39,6 +39,30 @@ export type Database = {
         }
         Relationships: []
       }
+      app_settings: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          updated_at: string
+          value: Json
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id: string
+          updated_at?: string
+          value: Json
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          updated_at?: string
+          value?: Json
+        }
+        Relationships: []
+      }
       orders: {
         Row: {
           created_at: string
@@ -204,6 +228,36 @@ export type Database = {
           id?: string
           original_id?: string
           original_table?: string
+        }
+        Relationships: []
+      }
+      settings_history: {
+        Row: {
+          changed_at: string
+          changed_by: string | null
+          id: string
+          new_value: Json
+          notes: string | null
+          old_value: Json | null
+          setting_id: string
+        }
+        Insert: {
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          new_value: Json
+          notes?: string | null
+          old_value?: Json | null
+          setting_id: string
+        }
+        Update: {
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          new_value?: Json
+          notes?: string | null
+          old_value?: Json | null
+          setting_id?: string
         }
         Relationships: []
       }

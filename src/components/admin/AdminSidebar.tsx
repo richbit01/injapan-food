@@ -11,7 +11,8 @@ import {
   FileText,
   BarChart3,
   Upload,
-  Download
+  Download,
+  Percent
 } from 'lucide-react';
 
 const AdminSidebar = () => {
@@ -34,6 +35,11 @@ const AdminSidebar = () => {
       title: 'Riwayat Pesanan',
       icon: ShoppingCart,
       path: '/admin/orders'
+    },
+    {
+      title: 'Pengaturan Referral',
+      icon: Percent,
+      path: '/admin/referral-settings'
     },
     {
       title: 'Import/Export',

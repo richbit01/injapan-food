@@ -23,6 +23,7 @@ import OrdersHistory from "./pages/admin/OrdersHistory";
 import ImportExport from "./pages/admin/ImportExport";
 import RecycleBin from "./pages/admin/RecycleBin";
 import AdminLogs from "./pages/admin/AdminLogs";
+import ReferralSettings from "./pages/admin/ReferralSettings";
 
 const queryClient = new QueryClient();
 
@@ -50,6 +51,7 @@ function App() {
               <Route path="/admin/products/add" element={<AddProduct />} />
               <Route path="/admin/products/edit/:id" element={<EditProduct />} />
               <Route path="/admin/orders" element={<OrdersHistory />} />
+              <Route path="/admin/referral-settings" element={<ReferralSettings />} />
               <Route path="/admin/import-export" element={<ImportExport />} />
               <Route path="/admin/recycle-bin" element={<RecycleBin />} />
               <Route path="/admin/logs" element={<AdminLogs />} />
