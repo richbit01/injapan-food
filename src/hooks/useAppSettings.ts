@@ -21,6 +21,10 @@ interface SettingsHistory {
   notes?: string;
 }
 
+interface ReferralCommissionValue {
+  rate: number;
+}
+
 export const useAppSettings = () => {
   return useQuery({
     queryKey: ['app-settings'],
@@ -55,7 +59,9 @@ export const useReferralCommissionRate = () => {
         throw error;
       }
 
-      return data?.value?.rate || 3;
+      // Type guard to safely access the rate property
+      const value = data?.value as ReferralCommissionValue;
+      return value?.rate || 3;
     },
   });
 };
