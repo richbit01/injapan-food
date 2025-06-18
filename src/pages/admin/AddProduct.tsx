@@ -36,12 +36,60 @@ const AddProduct = () => {
   ];
 
   const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    console.log(`Updating ${field} to:`, value);
+    setFormData(prev => {
+      const newData = { ...prev, [field]: value };
+      console.log('New form data:', newData);
+      return newData;
+    });
+  };
+
+  const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    console.log('Price input changed to:', value);
+    
+    // Allow empty string or valid numbers
+    if (value === '' || /^\d+$/.test(value)) {
+      handleInputChange('price', value);
+    }
+  };
+
+  const handleStockChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    console.log('Stock input changed to:', value);
+    
+    // Allow empty string or valid numbers
+    if (value === '' || /^\d+$/.test(value)) {
+      handleInputChange('stock', value);
+    }
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      console.log('Image file selected:', file.name, file.size);
+      
+      // Check file size (5MB limit)
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: "Error",
+          description: "Ukuran file terlalu besar. Maksimal 5MB",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Check file type
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+      if (!allowedTypes.includes(file.type)) {
+        toast({
+          title: "Error",
+          description: "Format file tidak didukung. Gunakan JPEG, PNG, WebP, atau GIF",
+          variant: "destructive"
+        });
+        return;
+      }
+
       setImageFile(file);
       const reader = new FileReader();
       reader.onload = () => {
@@ -54,29 +102,42 @@ const AddProduct = () => {
   const uploadImage = async (): Promise<string | null> => {
     if (!imageFile) return null;
 
-    const fileExt = imageFile.name.split('.').pop();
-    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+    console.log('Starting image upload...');
 
-    const { data, error } = await supabase.storage
-      .from('product-images')
-      .upload(fileName, imageFile);
+    try {
+      const fileExt = imageFile.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
 
-    if (error) {
-      console.error('Error uploading image:', error);
-      return null;
+      console.log('Uploading file:', fileName);
+
+      const { data, error } = await supabase.storage
+        .from('product-images')
+        .upload(fileName, imageFile);
+
+      if (error) {
+        console.error('Error uploading image:', error);
+        throw error;
+      }
+
+      console.log('Image uploaded successfully:', data);
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('product-images')
+        .getPublicUrl(fileName);
+
+      console.log('Public URL generated:', publicUrl);
+      return publicUrl;
+    } catch (error) {
+      console.error('Upload failed:', error);
+      throw error;
     }
-
-    const { data: { publicUrl } } = supabase.storage
-      .from('product-images')
-      .getPublicUrl(fileName);
-
-    return publicUrl;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validation
+    console.log('Submitting form with data:', formData);
+    
     if (!formData.name || !formData.price || !formData.category || !formData.stock) {
       toast({
         title: "Error",
@@ -86,11 +147,47 @@ const AddProduct = () => {
       return;
     }
 
+    // Validate price and stock are valid numbers
+    const priceNum = parseInt(formData.price);
+    const stockNum = parseInt(formData.stock);
+    
+    if (isNaN(priceNum) || priceNum < 0) {
+      toast({
+        title: "Error",
+        description: "Harga harus berupa angka yang valid",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    if (isNaN(stockNum) || stockNum < 0) {
+      toast({
+        title: "Error",
+        description: "Stok harus berupa angka yang valid",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
       // Upload image if provided
-      const imageUrl = await uploadImage();
+      let imageUrl = null;
+      if (imageFile) {
+        console.log('Uploading image...');
+        imageUrl = await uploadImage();
+        console.log('Image upload result:', imageUrl);
+      }
+
+      console.log('Inserting product with data:', {
+        name: formData.name,
+        description: formData.description,
+        price: priceNum,
+        category: formData.category,
+        stock: stockNum,
+        image_url: imageUrl || '/placeholder.svg'
+      });
 
       // Insert product
       const { error } = await supabase
@@ -98,13 +195,18 @@ const AddProduct = () => {
         .insert([{
           name: formData.name,
           description: formData.description,
-          price: parseInt(formData.price),
+          price: priceNum,
           category: formData.category,
-          stock: parseInt(formData.stock),
+          stock: stockNum,
           image_url: imageUrl || '/placeholder.svg'
         }]);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Database insert error:', error);
+        throw error;
+      }
+
+      console.log('Product inserted successfully');
 
       toast({
         title: "Berhasil!",
@@ -114,9 +216,20 @@ const AddProduct = () => {
       navigate('/admin/products');
     } catch (error) {
       console.error('Error adding product:', error);
+      
+      // More specific error messages
+      let errorMessage = "Gagal menambahkan produk";
+      if (error instanceof Error) {
+        if (error.message.includes('storage')) {
+          errorMessage = "Gagal mengupload gambar. Silakan coba lagi";
+        } else if (error.message.includes('duplicate')) {
+          errorMessage = "Produk dengan nama yang sama sudah ada";
+        }
+      }
+      
       toast({
         title: "Error",
-        description: "Gagal menambahkan produk",
+        description: errorMessage,
         variant: "destructive"
       });
     } finally {
@@ -174,11 +287,11 @@ const AddProduct = () => {
                     <Label htmlFor="price">Harga (¥) *</Label>
                     <Input
                       id="price"
-                      type="number"
+                      type="text"
+                      inputMode="numeric"
                       value={formData.price}
-                      onChange={(e) => handleInputChange('price', e.target.value)}
+                      onChange={handlePriceChange}
                       placeholder="0"
-                      min="0"
                       required
                     />
                   </div>
@@ -186,11 +299,11 @@ const AddProduct = () => {
                     <Label htmlFor="stock">Stok *</Label>
                     <Input
                       id="stock"
-                      type="number"
+                      type="text"
+                      inputMode="numeric"
                       value={formData.stock}
-                      onChange={(e) => handleInputChange('stock', e.target.value)}
+                      onChange={handleStockChange}
                       placeholder="0"
-                      min="0"
                       required
                     />
                   </div>
@@ -222,8 +335,12 @@ const AddProduct = () => {
                       onChange={handleImageChange}
                       className="mb-4"
                     />
+                    <p className="text-sm text-gray-500 mb-2">
+                      Format: JPEG, PNG, WebP, GIF. Maksimal 5MB
+                    </p>
                     {imagePreview && (
                       <div className="mt-4">
+                        <p className="text-sm text-gray-600 mb-2">Preview:</p>
                         <img 
                           src={imagePreview} 
                           alt="Preview" 
