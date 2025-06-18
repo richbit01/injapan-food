@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { useFirebaseAuth } from '@/hooks/useFirebaseAuth';
 import { toast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,12 +10,13 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { Upload, Save, ArrowLeft } from 'lucide-react';
+import { Save, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import AdminLayout from '@/components/admin/AdminLayout';
 
 const AddProduct = () => {
   const navigate = useNavigate();
+  const { user } = useFirebaseAuth();
   const [loading, setLoading] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -99,12 +101,55 @@ const AddProduct = () => {
     }
   };
 
+  const ensureUserProfile = async () => {
+    if (!user) {
+      throw new Error('User not authenticated');
+    }
+
+    console.log('Ensuring user profile exists for Firebase UID:', user.uid);
+
+    // Check if profile exists
+    const { data: existingProfile, error: profileError } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('firebase_uid', user.uid)
+      .single();
+
+    if (profileError && profileError.code !== 'PGRST116') {
+      console.error('Error checking profile:', profileError);
+      throw profileError;
+    }
+
+    if (!existingProfile) {
+      console.log('Creating new profile for user:', user.uid);
+      
+      // Create profile if it doesn't exist
+      const { error: insertError } = await supabase
+        .from('profiles')
+        .insert([{
+          firebase_uid: user.uid,
+          full_name: user.displayName || '',
+          role: 'admin' // Set as admin for now, adjust as needed
+        }]);
+
+      if (insertError) {
+        console.error('Error creating profile:', insertError);
+        throw insertError;
+      }
+    } else {
+      console.log('Profile exists:', existingProfile);
+    }
+  };
+
   const uploadImage = async (): Promise<string | null> => {
     if (!imageFile) return null;
 
     console.log('Starting image upload...');
 
     try {
+      // Ensure user profile exists first
+      await ensureUserProfile();
+
       const fileExt = imageFile.name.split('.').pop();
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
 
@@ -172,6 +217,9 @@ const AddProduct = () => {
     setLoading(true);
 
     try {
+      // Ensure user profile exists
+      await ensureUserProfile();
+
       // Upload image if provided
       let imageUrl = null;
       if (imageFile) {
@@ -220,10 +268,12 @@ const AddProduct = () => {
       // More specific error messages
       let errorMessage = "Gagal menambahkan produk";
       if (error instanceof Error) {
-        if (error.message.includes('storage')) {
-          errorMessage = "Gagal mengupload gambar. Silakan coba lagi";
+        if (error.message.includes('storage') || error.message.includes('violates row-level security')) {
+          errorMessage = "Gagal mengupload gambar. Pastikan Anda memiliki akses admin";
         } else if (error.message.includes('duplicate')) {
           errorMessage = "Produk dengan nama yang sama sudah ada";
+        } else if (error.message.includes('authentication') || error.message.includes('User not authenticated')) {
+          errorMessage = "Anda harus login sebagai admin";
         }
       }
       
