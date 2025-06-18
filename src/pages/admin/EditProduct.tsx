@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useProduct } from '@/hooks/useProducts';
@@ -40,6 +39,7 @@ const EditProduct = () => {
 
   useEffect(() => {
     if (product) {
+      console.log('Setting form data from product:', product);
       setFormData({
         name: product.name,
         description: product.description || '',
@@ -52,7 +52,32 @@ const EditProduct = () => {
   }, [product]);
 
   const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    console.log(`Updating ${field} to:`, value);
+    setFormData(prev => {
+      const newData = { ...prev, [field]: value };
+      console.log('New form data:', newData);
+      return newData;
+    });
+  };
+
+  const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    console.log('Price input changed to:', value);
+    
+    // Allow empty string or valid numbers
+    if (value === '' || /^\d+$/.test(value)) {
+      handleInputChange('price', value);
+    }
+  };
+
+  const handleStockChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    console.log('Stock input changed to:', value);
+    
+    // Allow empty string or valid numbers
+    if (value === '' || /^\d+$/.test(value)) {
+      handleInputChange('stock', value);
+    }
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -102,10 +127,34 @@ const EditProduct = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    console.log('Submitting form with data:', formData);
+    
     if (!formData.name || !formData.price || !formData.category || !formData.stock) {
       toast({
         title: "Error",
         description: "Semua field wajib diisi",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Validate price and stock are valid numbers
+    const priceNum = parseInt(formData.price);
+    const stockNum = parseInt(formData.stock);
+    
+    if (isNaN(priceNum) || priceNum < 0) {
+      toast({
+        title: "Error",
+        description: "Harga harus berupa angka yang valid",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    if (isNaN(stockNum) || stockNum < 0) {
+      toast({
+        title: "Error",
+        description: "Stok harus berupa angka yang valid",
         variant: "destructive"
       });
       return;
@@ -117,15 +166,24 @@ const EditProduct = () => {
       // Upload new image if provided
       const imageUrl = await uploadImage();
 
+      console.log('Updating product with:', {
+        name: formData.name,
+        description: formData.description,
+        price: priceNum,
+        category: formData.category,
+        stock: stockNum,
+        ...(imageUrl && { image_url: imageUrl })
+      });
+
       // Update product
       const { error } = await supabase
         .from('products')
         .update({
           name: formData.name,
           description: formData.description,
-          price: parseInt(formData.price),
+          price: priceNum,
           category: formData.category,
-          stock: parseInt(formData.stock),
+          stock: stockNum,
           ...(imageUrl && { image_url: imageUrl })
         })
         .eq('id', id!);
@@ -223,11 +281,11 @@ const EditProduct = () => {
                     <Label htmlFor="price">Harga (¥) *</Label>
                     <Input
                       id="price"
-                      type="number"
+                      type="text"
+                      inputMode="numeric"
                       value={formData.price}
-                      onChange={(e) => handleInputChange('price', e.target.value)}
+                      onChange={handlePriceChange}
                       placeholder="0"
-                      min="0"
                       required
                     />
                   </div>
@@ -235,11 +293,11 @@ const EditProduct = () => {
                     <Label htmlFor="stock">Stok *</Label>
                     <Input
                       id="stock"
-                      type="number"
+                      type="text"
+                      inputMode="numeric"
                       value={formData.stock}
-                      onChange={(e) => handleInputChange('stock', e.target.value)}
+                      onChange={handleStockChange}
                       placeholder="0"
-                      min="0"
                       required
                     />
                   </div>
