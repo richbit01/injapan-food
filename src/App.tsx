@@ -22,6 +22,7 @@ import ProductsList from "./pages/admin/ProductsList";
 import AddProduct from "./pages/admin/AddProduct";
 import EditProduct from "./pages/admin/EditProduct";
 import OrdersHistory from "./pages/admin/OrdersHistory";
+import UserManagement from "./pages/admin/UserManagement";
 import ImportExport from "./pages/admin/ImportExport";
 import RecycleBin from "./pages/admin/RecycleBin";
 import AdminLogs from "./pages/admin/AdminLogs";
@@ -56,6 +57,7 @@ function App() {
                 <Route path="/admin/products/add" element={<AddProduct />} />
                 <Route path="/admin/products/edit/:id" element={<EditProduct />} />
                 <Route path="/admin/orders" element={<OrdersHistory />} />
+                <Route path="/admin/users" element={<UserManagement />} />
                 <Route path="/admin/referral-settings" element={<ReferralSettings />} />
                 <Route path="/admin/import-export" element={<ImportExport />} />
                 <Route path="/admin/recycle-bin" element={<RecycleBin />} />

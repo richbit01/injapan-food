@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
@@ -12,7 +11,8 @@ import {
   BarChart3,
   Upload,
   Download,
-  Percent
+  Percent,
+  UserCog
 } from 'lucide-react';
 
 const AdminSidebar = () => {
@@ -35,6 +35,11 @@ const AdminSidebar = () => {
       title: 'Riwayat Pesanan',
       icon: ShoppingCart,
       path: '/admin/orders'
+    },
+    {
+      title: 'Kelola Pengguna',
+      icon: UserCog,
+      path: '/admin/users'
     },
     {
       title: 'Panel Referral',
