@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useProduct } from '@/hooks/useProducts';
 import { supabase } from '@/integrations/supabase/client';
-import { useFirebaseAuth } from '@/hooks/useFirebaseAuth';
 import { toast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,7 +16,6 @@ import AdminLayout from '@/components/admin/AdminLayout';
 const EditProduct = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user } = useFirebaseAuth();
   const { data: product, isLoading } = useProduct(id!);
   const [loading, setLoading] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -94,41 +92,8 @@ const EditProduct = () => {
     }
   };
 
-  const ensureSupabaseAuth = async () => {
-    if (!user) {
-      throw new Error('User not authenticated');
-    }
-
-    console.log('Ensuring Supabase authentication for Firebase user:', user.uid);
-
-    // Get Firebase token and sign in to Supabase
-    const token = await user.getIdToken();
-    
-    // Try to sign in with Firebase token
-    const { data, error } = await supabase.auth.signInWithIdToken({
-      provider: 'firebase',
-      token: token
-    });
-
-    if (error) {
-      console.error('Error signing in to Supabase:', error);
-      // If token signin fails, try anonymous signin as fallback
-      const { error: anonError } = await supabase.auth.signInAnonymously();
-      if (anonError) {
-        console.error('Error with anonymous signin:', anonError);
-        throw new Error('Authentication failed');
-      }
-    }
-
-    console.log('Supabase authentication successful:', data);
-    return data;
-  };
-
   const uploadImage = async (): Promise<string | null> => {
     if (!imageFile) return null;
-
-    // Ensure Supabase authentication
-    await ensureSupabaseAuth();
 
     // Delete old image if it exists and is from our storage
     if (product?.image_url && product.image_url.includes('product-images')) {

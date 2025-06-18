@@ -1,7 +1,7 @@
+
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { useFirebaseAuth } from '@/hooks/useFirebaseAuth';
 import { toast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,7 +15,6 @@ import AdminLayout from '@/components/admin/AdminLayout';
 
 const AddProduct = () => {
   const navigate = useNavigate();
-  const { user } = useFirebaseAuth();
   const [loading, setLoading] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -100,45 +99,12 @@ const AddProduct = () => {
     }
   };
 
-  const ensureSupabaseAuth = async () => {
-    if (!user) {
-      throw new Error('User not authenticated');
-    }
-
-    console.log('Ensuring Supabase authentication for Firebase user:', user.uid);
-
-    // Get Firebase token and sign in to Supabase
-    const token = await user.getIdToken();
-    
-    // Try to sign in with Firebase token
-    const { data, error } = await supabase.auth.signInWithIdToken({
-      provider: 'firebase',
-      token: token
-    });
-
-    if (error) {
-      console.error('Error signing in to Supabase:', error);
-      // If token signin fails, try anonymous signin as fallback
-      const { error: anonError } = await supabase.auth.signInAnonymously();
-      if (anonError) {
-        console.error('Error with anonymous signin:', anonError);
-        throw new Error('Authentication failed');
-      }
-    }
-
-    console.log('Supabase authentication successful:', data);
-    return data;
-  };
-
   const uploadImage = async (): Promise<string | null> => {
     if (!imageFile) return null;
 
     console.log('Starting image upload...');
 
     try {
-      // Ensure Supabase authentication
-      await ensureSupabaseAuth();
-
       const fileExt = imageFile.name.split('.').pop();
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
 
