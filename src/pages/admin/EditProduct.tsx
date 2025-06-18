@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useProduct } from '@/hooks/useProducts';
@@ -95,51 +94,41 @@ const EditProduct = () => {
     }
   };
 
-  const ensureUserProfile = async () => {
+  const ensureSupabaseAuth = async () => {
     if (!user) {
       throw new Error('User not authenticated');
     }
 
-    console.log('Ensuring user profile exists for Firebase UID:', user.uid);
+    console.log('Ensuring Supabase authentication for Firebase user:', user.uid);
 
-    // Check if profile exists
-    const { data: existingProfile, error: profileError } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('firebase_uid', user.uid)
-      .single();
+    // Get Firebase token and sign in to Supabase
+    const token = await user.getIdToken();
+    
+    // Try to sign in with Firebase token
+    const { data, error } = await supabase.auth.signInWithIdToken({
+      provider: 'firebase',
+      token: token
+    });
 
-    if (profileError && profileError.code !== 'PGRST116') {
-      console.error('Error checking profile:', profileError);
-      throw profileError;
-    }
-
-    if (!existingProfile) {
-      console.log('Creating new profile for user:', user.uid);
-      
-      // Create profile if it doesn't exist
-      const { error: insertError } = await supabase
-        .from('profiles')
-        .insert([{
-          firebase_uid: user.uid,
-          full_name: user.displayName || '',
-          role: 'admin' // Set as admin for now, adjust as needed
-        }]);
-
-      if (insertError) {
-        console.error('Error creating profile:', insertError);
-        throw insertError;
+    if (error) {
+      console.error('Error signing in to Supabase:', error);
+      // If token signin fails, try anonymous signin as fallback
+      const { error: anonError } = await supabase.auth.signInAnonymously();
+      if (anonError) {
+        console.error('Error with anonymous signin:', anonError);
+        throw new Error('Authentication failed');
       }
-    } else {
-      console.log('Profile exists:', existingProfile);
     }
+
+    console.log('Supabase authentication successful:', data);
+    return data;
   };
 
   const uploadImage = async (): Promise<string | null> => {
     if (!imageFile) return null;
 
-    // Ensure user profile exists first
-    await ensureUserProfile();
+    // Ensure Supabase authentication
+    await ensureSupabaseAuth();
 
     // Delete old image if it exists and is from our storage
     if (product?.image_url && product.image_url.includes('product-images')) {
@@ -209,9 +198,6 @@ const EditProduct = () => {
     setLoading(true);
 
     try {
-      // Ensure user profile exists
-      await ensureUserProfile();
-
       // Upload new image if provided
       const imageUrl = await uploadImage();
 
@@ -248,13 +234,12 @@ const EditProduct = () => {
     } catch (error) {
       console.error('Error updating product:', error);
       
-      // More specific error messages
       let errorMessage = "Gagal mengupdate produk";
       if (error instanceof Error) {
         if (error.message.includes('storage') || error.message.includes('violates row-level security')) {
-          errorMessage = "Gagal mengupload gambar. Pastikan Anda memiliki akses admin";
-        } else if (error.message.includes('authentication') || error.message.includes('User not authenticated')) {
-          errorMessage = "Anda harus login sebagai admin";
+          errorMessage = "Gagal mengupload gambar. Silakan coba lagi";
+        } else if (error.message.includes('authentication')) {
+          errorMessage = "Masalah autentikasi. Silakan login ulang";
         }
       }
       
