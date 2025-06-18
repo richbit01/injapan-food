@@ -13,9 +13,10 @@ import { Link } from 'react-router-dom';
 import AdminLayout from '@/components/admin/AdminLayout';
 
 const ProductsList = () => {
-  const { data: products = [], refetch } = useProducts();
+  const { data: products = [], refetch, isLoading } = useProducts();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [deletingProducts, setDeletingProducts] = useState<Set<string>>(new Set());
 
   console.log('Products data:', products); // Debug log
 
@@ -31,31 +32,53 @@ const ProductsList = () => {
   const handleDeleteProduct = async (productId: string, imageUrl?: string) => {
     if (!confirm('Apakah Anda yakin ingin menghapus produk ini?')) return;
 
+    console.log('Starting deletion of product:', productId);
+    
+    // Add product to deleting set to show loading state
+    setDeletingProducts(prev => new Set(prev).add(productId));
+
     try {
       // Delete image from storage if exists
       if (imageUrl && imageUrl.includes('product-images')) {
+        console.log('Deleting image from storage:', imageUrl);
         const imagePath = imageUrl.split('/').pop();
         if (imagePath) {
-          await supabase.storage
+          const { error: storageError } = await supabase.storage
             .from('product-images')
             .remove([imagePath]);
+          
+          if (storageError) {
+            console.warn('Error deleting image from storage:', storageError);
+            // Continue with product deletion even if image deletion fails
+          } else {
+            console.log('Image deleted successfully from storage');
+          }
         }
       }
 
       // Delete product from database
+      console.log('Deleting product from database:', productId);
       const { error } = await supabase
         .from('products')
         .delete()
         .eq('id', productId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Database deletion error:', error);
+        throw error;
+      }
+
+      console.log('Product deleted successfully from database');
 
       toast({
         title: "Berhasil!",
         description: "Produk berhasil dihapus",
       });
 
-      refetch();
+      // Force refetch the products list
+      console.log('Refetching products list...');
+      await refetch();
+      
     } catch (error) {
       console.error('Error deleting product:', error);
       toast({
@@ -63,8 +86,25 @@ const ProductsList = () => {
         description: "Gagal menghapus produk",
         variant: "destructive"
       });
+    } finally {
+      // Remove product from deleting set
+      setDeletingProducts(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(productId);
+        return newSet;
+      });
     }
   };
+
+  if (isLoading) {
+    return (
+      <AdminLayout>
+        <div className="p-8 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout>
@@ -123,7 +163,9 @@ const ProductsList = () => {
           <CardContent>
             <div className="space-y-4">
               {filteredProducts.map((product) => (
-                <div key={product.id} className="flex items-center space-x-4 p-4 border rounded-lg hover:bg-gray-50">
+                <div key={product.id} className={`flex items-center space-x-4 p-4 border rounded-lg hover:bg-gray-50 transition-all ${
+                  deletingProducts.has(product.id) ? 'opacity-50 pointer-events-none' : ''
+                }`}>
                   <img 
                     src={product.image_url || '/placeholder.svg'} 
                     alt={product.name}
@@ -163,9 +205,14 @@ const ProductsList = () => {
                       size="sm" 
                       variant="destructive" 
                       onClick={() => handleDeleteProduct(product.id, product.image_url)}
+                      disabled={deletingProducts.has(product.id)}
                       title="Hapus Produk"
                     >
-                      <Trash className="w-4 h-4" />
+                      {deletingProducts.has(product.id) ? (
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <Trash className="w-4 h-4" />
+                      )}
                     </Button>
                   </div>
                 </div>
