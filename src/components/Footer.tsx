@@ -1,7 +1,10 @@
 
 import { Link } from 'react-router-dom';
+import { useLanguage } from '@/hooks/useLanguage';
 
 const Footer = () => {
+  const { t } = useLanguage();
+
   return (
     <footer className="bg-gray-900 text-white py-12">
       <div className="container mx-auto px-4">
@@ -22,8 +25,7 @@ const Footer = () => {
               </div>
             </div>
             <p className="text-gray-400 mb-4">
-              Toko online terpercaya untuk makanan khas Indonesia berkualitas tinggi, 
-              khusus melayani komunitas Indonesia di Jepang.
+              {t('footer.description')}
             </p>
             <div className="text-sm text-gray-400">
               <p>📱 WhatsApp: +62 851-5545-2259</p>
@@ -33,26 +35,26 @@ const Footer = () => {
 
           {/* Quick Links */}
           <div>
-            <h4 className="text-lg font-semibold mb-4">Menu Utama</h4>
+            <h4 className="text-lg font-semibold mb-4">{t('footer.quickLinks')}</h4>
             <ul className="space-y-2">
               <li>
                 <Link to="/" className="text-gray-400 hover:text-white transition-colors duration-200">
-                  Beranda
+                  {t('nav.home')}
                 </Link>
               </li>
               <li>
                 <Link to="/products" className="text-gray-400 hover:text-white transition-colors duration-200">
-                  Produk
+                  {t('nav.products')}
                 </Link>
               </li>
               <li>
                 <Link to="/how-to-buy" className="text-gray-400 hover:text-white transition-colors duration-200">
-                  Cara Membeli
+                  {t('nav.howToBuy')}
                 </Link>
               </li>
               <li>
                 <Link to="/cart" className="text-gray-400 hover:text-white transition-colors duration-200">
-                  Keranjang
+                  {t('nav.cart')}
                 </Link>
               </li>
             </ul>
@@ -60,7 +62,7 @@ const Footer = () => {
 
           {/* Categories */}
           <div>
-            <h4 className="text-lg font-semibold mb-4">Kategori</h4>
+            <h4 className="text-lg font-semibold mb-4">{t('footer.categories')}</h4>
             <ul className="space-y-2 text-gray-400">
               <li>Makanan Ringan</li>
               <li>Bumbu Dapur</li>
@@ -72,7 +74,7 @@ const Footer = () => {
         </div>
 
         <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-          <p>&copy; 2025 Injapan Food. All rights reserved.</p>
+          <p>{t('footer.copyright')}</p>
         </div>
       </div>
     </footer>

@@ -4,8 +4,10 @@ import { Link, useLocation } from 'react-router-dom';
 import { LogIn } from 'lucide-react';
 import { useCart } from '@/hooks/useCart';
 import { useFirebaseAuth } from '@/hooks/useFirebaseAuth';
+import { useLanguage } from '@/hooks/useLanguage';
 import UserMenu from '@/components/UserMenu';
 import CartIcon from '@/components/CartIcon';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { Button } from '@/components/ui/button';
 
 interface HeaderProps {
@@ -16,15 +18,16 @@ const Header = ({ shouldAnimateCart = false }: HeaderProps) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
   const { user } = useFirebaseAuth();
+  const { t } = useLanguage();
 
   const isActive = (path: string) => location.pathname === path;
 
   const navItems = [
-    { path: '/', label: 'Beranda' },
-    { path: '/products', label: 'Produk' },
-    { path: '/how-to-buy', label: 'Cara Membeli' },
+    { path: '/', label: t('nav.home') },
+    { path: '/products', label: t('nav.products') },
+    { path: '/how-to-buy', label: t('nav.howToBuy') },
     // Add referral menu item only for authenticated users
-    ...(user ? [{ path: '/referral', label: 'Affiliate' }] : []),
+    ...(user ? [{ path: '/referral', label: t('nav.affiliate') }] : []),
   ];
 
   return (
@@ -63,8 +66,11 @@ const Header = ({ shouldAnimateCart = false }: HeaderProps) => {
             ))}
           </nav>
 
-          {/* Right side - Cart, Auth, Mobile Menu */}
+          {/* Right side - Language, Cart, Auth, Mobile Menu */}
           <div className="flex items-center space-x-4">
+            {/* Language Switcher */}
+            <LanguageSwitcher />
+
             {/* Cart */}
             <Link
               to="/cart"
@@ -81,7 +87,7 @@ const Header = ({ shouldAnimateCart = false }: HeaderProps) => {
               <Link to="/auth">
                 <Button variant="outline" size="sm" className="flex items-center space-x-2">
                   <LogIn className="w-4 h-4" />
-                  <span className="hidden sm:inline">Masuk</span>
+                  <span className="hidden sm:inline">{t('nav.login')}</span>
                 </Button>
               </Link>
             )}
@@ -130,7 +136,7 @@ const Header = ({ shouldAnimateCart = false }: HeaderProps) => {
                   onClick={() => setIsMenuOpen(false)}
                   className="text-gray-700 hover:text-primary font-medium"
                 >
-                  Masuk / Daftar
+                  {t('nav.login')} / {t('nav.register')}
                 </Link>
               )}
             </nav>

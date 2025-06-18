@@ -2,6 +2,7 @@
 import { useState, useRef } from 'react';
 import { useProducts } from '@/hooks/useProducts';
 import { useCartAnimation } from '@/hooks/useCartAnimation';
+import { useLanguage } from '@/hooks/useLanguage';
 import ProductCard from '@/components/ProductCard';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -10,6 +11,7 @@ import { Product } from '@/types';
 
 const Products = () => {
   const { data: products = [], isLoading, isError, error } = useProducts();
+  const { t } = useLanguage();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   
@@ -49,15 +51,15 @@ const Products = () => {
         <Header />
         <div className="container mx-auto px-4 py-16 text-center">
           <div className="text-6xl mb-4">⚠️</div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Terjadi Kesalahan</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">{t('common.error')}</h2>
           <p className="text-gray-600 mb-4">
-            {error?.message || 'Gagal memuat produk. Silakan coba refresh halaman.'}
+            {error?.message || t('common.loadingError')}
           </p>
           <button 
             onClick={() => window.location.reload()}
             className="bg-primary text-white px-6 py-3 rounded-lg hover:bg-primary/90"
           >
-            Refresh Halaman
+            {t('common.refresh')}
           </button>
         </div>
         <Footer />
@@ -72,7 +74,7 @@ const Products = () => {
         <Header />
         <div className="container mx-auto px-4 py-16 text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-gray-600">Memuat produk...</p>
+          <p className="text-gray-600">{t('products.loading')}</p>
         </div>
         <Footer />
       </div>
@@ -94,8 +96,8 @@ const Products = () => {
       
       <div className="container mx-auto px-4 py-8">
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">Katalog Produk</h1>
-          <p className="text-xl text-gray-600">Temukan makanan Indonesia favorit Anda</p>
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">{t('products.catalog')}</h1>
+          <p className="text-xl text-gray-600">{t('products.description')}</p>
         </div>
 
         {/* Search and Filter */}
@@ -103,7 +105,7 @@ const Products = () => {
           <div className="flex-1">
             <input
               type="text"
-              placeholder="Cari produk..."
+              placeholder={t('products.search')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
@@ -115,7 +117,7 @@ const Products = () => {
               onChange={(e) => setSelectedCategory(e.target.value)}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
             >
-              <option value="all">Semua Kategori</option>
+              <option value="all">{t('categories.all')}</option>
               {categories.map(category => (
                 <option key={category} value={category}>{category}</option>
               ))}
@@ -139,14 +141,14 @@ const Products = () => {
             {products.length === 0 ? (
               <>
                 <div className="text-6xl mb-4">📦</div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">Belum Ada Produk</h2>
-                <p className="text-gray-600">Produk akan segera ditambahkan</p>
+                <h2 className="text-2xl font-bold text-gray-900 mb-4">{t('products.noProducts')}</h2>
+                <p className="text-gray-600">{t('products.comingSoon')}</p>
               </>
             ) : (
               <>
                 <div className="text-6xl mb-4">🔍</div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">Produk Tidak Ditemukan</h2>
-                <p className="text-gray-600">Coba gunakan kata kunci yang berbeda atau pilih kategori lain</p>
+                <h2 className="text-2xl font-bold text-gray-900 mb-4">{t('products.notFound')}</h2>
+                <p className="text-gray-600">{t('products.tryDifferent')}</p>
               </>
             )}
           </div>

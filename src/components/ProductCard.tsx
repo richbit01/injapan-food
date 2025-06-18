@@ -3,6 +3,7 @@ import { useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Product } from '@/types';
 import { formatPrice } from '@/utils/cart';
+import { useLanguage } from '@/hooks/useLanguage';
 import AddToCartButton from '@/components/AddToCartButton';
 
 interface ProductCardProps {
@@ -12,6 +13,7 @@ interface ProductCardProps {
 
 const ProductCard = ({ product, onAddToCart }: ProductCardProps) => {
   const cardRef = useRef<HTMLDivElement>(null);
+  const { t } = useLanguage();
 
   const handleAddToCart = (position: { x: number; y: number }) => {
     if (onAddToCart) {
@@ -36,7 +38,7 @@ const ProductCard = ({ product, onAddToCart }: ProductCardProps) => {
           {product.stock === 0 && (
             <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
               <span className="bg-red-600 text-white px-3 py-1 rounded-full text-sm font-medium">
-                Stok Habis
+                {t('products.outOfStock')}
               </span>
             </div>
           )}
@@ -58,7 +60,7 @@ const ProductCard = ({ product, onAddToCart }: ProductCardProps) => {
                   ? 'bg-yellow-100 text-yellow-800'
                   : 'bg-red-100 text-red-800'
             }`}>
-              {product.stock > 0 ? `Stok: ${product.stock}` : 'Stok Habis'}
+              {product.stock > 0 ? `${t('products.stock')}: ${product.stock}` : t('products.outOfStock')}
             </span>
           </div>
         </div>

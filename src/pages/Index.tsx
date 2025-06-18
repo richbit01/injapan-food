@@ -6,6 +6,7 @@ import Footer from '@/components/Footer';
 import { useProducts } from '@/hooks/useProducts';
 import { useQuery } from '@tanstack/react-query';
 import { getCategories } from '@/services/productService';
+import { useLanguage } from '@/hooks/useLanguage';
 
 const Index = () => {
   const { data: products = [], isLoading: productsLoading, isError: productsError } = useProducts();
@@ -13,6 +14,7 @@ const Index = () => {
     queryKey: ['categories'],
     queryFn: getCategories,
   });
+  const { t } = useLanguage();
 
   const featuredProducts = products.slice(0, 6);
 
@@ -23,13 +25,13 @@ const Index = () => {
         <Header />
         <div className="container mx-auto px-4 py-16 text-center">
           <div className="text-6xl mb-4">⚠️</div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Terjadi Kesalahan</h2>
-          <p className="text-gray-600 mb-4">Gagal memuat data. Silakan coba refresh halaman.</p>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">{t('common.error')}</h2>
+          <p className="text-gray-600 mb-4">{t('common.loadingError')}</p>
           <button 
             onClick={() => window.location.reload()}
             className="bg-primary text-white px-6 py-3 rounded-lg hover:bg-primary/90"
           >
-            Refresh Halaman
+            {t('common.refresh')}
           </button>
         </div>
         <Footer />
@@ -44,7 +46,7 @@ const Index = () => {
         <Header />
         <div className="container mx-auto px-4 py-16 text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-gray-600">Memuat produk...</p>
+          <p className="text-gray-600">{t('products.loading')}</p>
         </div>
         <Footer />
       </div>
@@ -60,17 +62,17 @@ const Index = () => {
         <div className="container mx-auto px-4 text-center">
           <div className="animate-fade-in">
             <h1 className="text-4xl md:text-6xl font-bold mb-6">
-              Rasa Indonesia 🇮🇩<br />
-              <span className="text-secondary">di Tanah Sakura 🌸</span>
+              {t('hero.title')}<br />
+              <span className="text-secondary">{t('hero.subtitle')}</span>
             </h1>
             <p className="text-xl md:text-2xl mb-8 max-w-3xl mx-auto">
-              Temukan cita rasa rumah dengan koleksi makanan khas Indonesia terlengkap untuk Anda yang berada di Jepang
+              {t('hero.description')}
             </p>
             <Link
               to="/products"
               className="inline-block bg-white text-primary font-bold py-4 px-8 rounded-lg text-lg hover:bg-gray-100 transition-all duration-200 transform hover:scale-105"
             >
-              🛒 Belanja Sekarang
+              {t('hero.shopNow')}
             </Link>
           </div>
         </div>
@@ -79,11 +81,11 @@ const Index = () => {
       {/* Categories Section */}
       <section className="py-16 bg-white">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-12">Kategori Produk</h2>
+          <h2 className="text-3xl font-bold text-center mb-12">{t('categories.title')}</h2>
           {categoriesLoading ? (
             <div className="text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
-              <p className="text-gray-600">Memuat kategori...</p>
+              <p className="text-gray-600">{t('common.loading')}</p>
             </div>
           ) : categories.length > 0 ? (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
@@ -102,7 +104,7 @@ const Index = () => {
             </div>
           ) : (
             <div className="text-center py-8">
-              <p className="text-gray-600">Belum ada kategori tersedia</p>
+              <p className="text-gray-600">{t('products.noProducts')}</p>
             </div>
           )}
         </div>
@@ -111,11 +113,11 @@ const Index = () => {
       {/* Featured Products */}
       <section className="py-16">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-12">Produk Populer</h2>
+          <h2 className="text-3xl font-bold text-center mb-12">{t('products.featured')}</h2>
           {productsLoading ? (
             <div className="text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
-              <p className="text-gray-600">Memuat produk...</p>
+              <p className="text-gray-600">{t('products.loading')}</p>
             </div>
           ) : featuredProducts.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -126,8 +128,8 @@ const Index = () => {
           ) : (
             <div className="text-center py-12">
               <div className="text-6xl mb-4">📦</div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Belum Ada Produk</h3>
-              <p className="text-gray-600">Produk akan segera ditambahkan</p>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">{t('products.noProducts')}</h3>
+              <p className="text-gray-600">{t('products.comingSoon')}</p>
             </div>
           )}
           {featuredProducts.length > 0 && (
@@ -136,7 +138,7 @@ const Index = () => {
                 to="/products"
                 className="btn-primary inline-block"
               >
-                Lihat Semua Produk
+                {t('products.viewAll')}
               </Link>
             </div>
           )}
@@ -146,22 +148,22 @@ const Index = () => {
       {/* Why Choose Us */}
       <section className="py-16 bg-white">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-12">Mengapa Pilih Injapan Food?</h2>
+          <h2 className="text-3xl font-bold text-center mb-12">{t('whyChoose.title')}</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="text-center p-6">
               <div className="text-5xl mb-4">🚚</div>
-              <h3 className="text-xl font-semibold mb-3">Pengiriman Cepat</h3>
-              <p className="text-gray-600">Pengiriman ke seluruh Jepang dengan packaging aman dan terjamin</p>
+              <h3 className="text-xl font-semibold mb-3">{t('whyChoose.fastDelivery')}</h3>
+              <p className="text-gray-600">{t('whyChoose.fastDeliveryDesc')}</p>
             </div>
             <div className="text-center p-6">
               <div className="text-5xl mb-4">✅</div>
-              <h3 className="text-xl font-semibold mb-3">Kualitas Terjamin</h3>
-              <p className="text-gray-600">Semua produk adalah authentic Indonesia dengan kualitas terbaik</p>
+              <h3 className="text-xl font-semibold mb-3">{t('whyChoose.qualityGuaranteed')}</h3>
+              <p className="text-gray-600">{t('whyChoose.qualityGuaranteedDesc')}</p>
             </div>
             <div className="text-center p-6">
               <div className="text-5xl mb-4">💬</div>
-              <h3 className="text-xl font-semibold mb-3">Pelayanan 24/7</h3>
-              <p className="text-gray-600">Customer service siap membantu Anda kapan saja via WhatsApp</p>
+              <h3 className="text-xl font-semibold mb-3">{t('whyChoose.support247')}</h3>
+              <p className="text-gray-600">{t('whyChoose.support247Desc')}</p>
             </div>
           </div>
         </div>
@@ -170,20 +172,20 @@ const Index = () => {
       {/* CTA Section */}
       <section className="py-16 bg-accent text-white">
         <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl font-bold mb-6">Siap Merasakan Kelezatan Indonesia?</h2>
-          <p className="text-xl mb-8">Jangan biarkan rindu kampung halaman mengganggu. Pesan sekarang!</p>
+          <h2 className="text-3xl font-bold mb-6">{t('cta.title')}</h2>
+          <p className="text-xl mb-8">{t('cta.description')}</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               to="/products"
               className="btn-secondary inline-block"
             >
-              🛍️ Mulai Belanja
+              {t('cta.startShopping')}
             </Link>
             <Link
               to="/how-to-buy"
               className="bg-white text-accent hover:bg-gray-100 px-6 py-3 rounded-lg font-medium transition-all duration-200"
             >
-              📖 Cara Membeli
+              {t('cta.howToBuy')}
             </Link>
           </div>
         </div>
