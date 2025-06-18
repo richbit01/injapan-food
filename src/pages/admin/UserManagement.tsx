@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useFirebaseAuth } from '@/hooks/useFirebaseAuth';
@@ -40,7 +39,18 @@ const UserManagement = () => {
       }
 
       console.log('Fetched users:', data);
-      setUsers(data || []);
+      
+      // Type the data properly to match UserProfile interface
+      const typedUsers: UserProfile[] = (data || []).map(user => ({
+        id: user.id,
+        firebase_uid: user.firebase_uid || '',
+        full_name: user.full_name || '',
+        role: (user.role === 'admin' ? 'admin' : 'user') as 'admin' | 'user',
+        created_at: user.created_at,
+        updated_at: user.updated_at
+      }));
+      
+      setUsers(typedUsers);
     } catch (error) {
       console.error('Error in fetchUsers:', error);
       toast({
