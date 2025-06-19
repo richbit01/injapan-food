@@ -2,7 +2,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { useCreateReferralTransaction } from '@/hooks/useReferralCodes';
+import { useCreateReferralTransaction } from '@/hooks/useCreateReferralTransaction';
 import { useReferralCommission } from '@/hooks/useReferralCommission';
 
 interface CheckoutData {
@@ -34,23 +34,28 @@ export const useCheckoutWithReferral = () => {
 
   return useMutation({
     mutationFn: async (checkoutData: CheckoutData) => {
-      console.log('🛒 Starting checkout process:', {
+      console.log('🛒 Starting checkout process with detailed logging:', {
         totalPrice: checkoutData.totalPrice,
         referralCode: checkoutData.referralCode,
         userId: user?.id,
-        itemsCount: checkoutData.items.length
+        itemsCount: checkoutData.items.length,
+        customerInfo: checkoutData.customerInfo
       });
 
       // Create the order first
+      const orderData = {
+        user_id: user?.id || null,
+        items: checkoutData.items,
+        customer_info: checkoutData.customerInfo,
+        total_price: checkoutData.totalPrice,
+        status: 'pending'
+      };
+
+      console.log('📝 Creating order with data:', orderData);
+
       const { data: order, error: orderError } = await supabase
         .from('orders')
-        .insert({
-          user_id: user?.id || null,
-          items: checkoutData.items,
-          customer_info: checkoutData.customerInfo,
-          total_price: checkoutData.totalPrice,
-          status: 'pending'
-        })
+        .insert(orderData)
         .select()
         .single();
 
@@ -59,16 +64,20 @@ export const useCheckoutWithReferral = () => {
         throw new Error(`Failed to create order: ${orderError.message}`);
       }
 
-      console.log('✅ Order created successfully:', order.id);
+      console.log('✅ Order created successfully:', {
+        orderId: order.id,
+        orderData: order
+      });
 
       // Process referral if code provided
       if (checkoutData.referralCode && checkoutData.referralCode.trim()) {
         const cleanCode = checkoutData.referralCode.trim().toUpperCase();
         
         try {
-          console.log('🔍 Processing referral code:', cleanCode);
+          console.log('🔍 Processing referral code with detailed steps:', cleanCode);
           
           // First validate the referral code exists and is active
+          console.log('🔍 Step 1: Validating referral code in database...');
           const { data: referralCodeData, error: validationError } = await supabase
             .from('referral_codes')
             .select('*')
@@ -77,36 +86,50 @@ export const useCheckoutWithReferral = () => {
             .single();
 
           if (validationError || !referralCodeData) {
-            console.warn('⚠️ Invalid referral code:', cleanCode, validationError);
+            console.warn('⚠️ Invalid referral code:', {
+              code: cleanCode,
+              error: validationError,
+              data: referralCodeData
+            });
             // Don't throw error, just log warning - order should still proceed
             return order;
           }
 
-          console.log('✅ Valid referral code found:', {
+          console.log('✅ Step 2: Valid referral code found:', {
             code: referralCodeData.code,
-            ownerId: referralCodeData.user_id
+            ownerId: referralCodeData.user_id,
+            currentUses: referralCodeData.total_uses,
+            currentCommission: referralCodeData.total_commission_earned
           });
 
           // Prevent self-referral
           if (user?.id && referralCodeData.user_id === user.id) {
-            console.warn('⚠️ Self-referral attempt detected, skipping');
+            console.warn('⚠️ Step 3: Self-referral attempt detected, skipping referral processing');
             return order;
           }
+
+          console.log('✅ Step 3: Self-referral check passed');
 
           // Calculate commission
           const commissionAmount = calculateCommission(checkoutData.totalPrice);
           
-          console.log('💰 Creating referral transaction:', {
+          console.log('💰 Step 4: Commission calculation:', {
+            orderTotal: checkoutData.totalPrice,
+            commissionAmount,
+            commissionRate: '3%'
+          });
+
+          console.log('📝 Step 5: Creating referral transaction with data:', {
             referralCode: cleanCode,
             orderId: order.id,
             orderTotal: checkoutData.totalPrice,
             commissionAmount,
             referrerUserId: referralCodeData.user_id,
-            referredUserId: user?.id
+            referredUserId: user?.id || 'guest'
           });
 
-          // Create referral transaction
-          await createReferralTransaction.mutateAsync({
+          // Create referral transaction using the mutation
+          const transactionResult = await createReferralTransaction.mutateAsync({
             referralCode: cleanCode,
             orderId: order.id,
             orderTotal: checkoutData.totalPrice,
@@ -114,21 +137,38 @@ export const useCheckoutWithReferral = () => {
             referredUserId: user?.id
           });
 
-          console.log('✅ Referral transaction processed successfully');
+          console.log('✅ Step 6: Referral transaction created successfully:', {
+            transactionId: transactionResult.id,
+            transactionData: transactionResult
+          });
+
+          // Force refresh of referral data
+          console.log('🔄 Step 7: Invalidating queries to refresh UI...');
+          queryClient.invalidateQueries({ queryKey: ['referral-transactions'] });
+          queryClient.invalidateQueries({ queryKey: ['user-referral-code'] });
+          queryClient.invalidateQueries({ queryKey: ['admin-referrer-summary'] });
+          queryClient.invalidateQueries({ queryKey: ['admin-referral-details'] });
+
+          console.log('🎉 Referral processing completed successfully!');
 
         } catch (referralError: any) {
-          console.error('❌ Error processing referral transaction:', referralError);
+          console.error('❌ Error processing referral transaction:', {
+            error: referralError,
+            message: referralError.message,
+            stack: referralError.stack
+          });
           // Don't fail the order, just log the referral error
-          console.warn('⚠️ Order successful but referral processing failed:', referralError.message);
+          console.warn('⚠️ Order successful but referral processing failed');
         }
       } else {
         console.log('ℹ️ No referral code provided, skipping referral processing');
       }
 
+      console.log('✅ Final step: Order checkout completed successfully for order:', order.id);
       return order;
     },
     onSuccess: (order) => {
-      console.log('🎉 Checkout completed successfully for order:', order.id);
+      console.log('🎉 Checkout mutation completed successfully for order:', order.id);
       // Invalidate all relevant queries to ensure UI updates
       queryClient.invalidateQueries({ queryKey: ['orders'] });
       queryClient.invalidateQueries({ queryKey: ['referral-transactions'] });
@@ -137,7 +177,7 @@ export const useCheckoutWithReferral = () => {
       queryClient.invalidateQueries({ queryKey: ['admin-referral-details'] });
     },
     onError: (error) => {
-      console.error('💥 Checkout failed:', error);
+      console.error('💥 Checkout mutation failed:', error);
     }
   });
 };
