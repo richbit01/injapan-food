@@ -94,18 +94,21 @@ export const useCreateReferralCode = () => {
 
       console.log('Creating referral code for user:', user.id);
 
-      // Generate truly unique referral code
-      const timestamp = Date.now();
-      const randomStr = Math.random().toString(36).substring(2, 8).toUpperCase();
-      const userIdHash = user.id.replace(/-/g, '').substring(0, 6).toUpperCase();
-      const code = `REF${userIdHash}${randomStr}`;
-
-      console.log('Generated referral code:', code);
+      // Generate truly unique referral code using multiple random elements
+      const timestamp = Date.now().toString().slice(-6); // Last 6 digits of timestamp
+      const randomStr1 = Math.random().toString(36).substring(2, 6).toUpperCase(); // 4 chars
+      const randomStr2 = Math.random().toString(36).substring(2, 4).toUpperCase(); // 2 chars
+      const userIdPart = user.id.replace(/-/g, '').substring(0, 4).toUpperCase(); // First 4 chars of user ID
+      
+      // Create a more complex and unique code
+      const baseCode = `REF${userIdPart}${randomStr1}${timestamp}${randomStr2}`;
+      
+      console.log('Generated base referral code:', baseCode);
 
       // Check if code already exists and regenerate if needed
-      let finalCode = code;
+      let finalCode = baseCode;
       let attempts = 0;
-      const maxAttempts = 5;
+      const maxAttempts = 10;
 
       while (attempts < maxAttempts) {
         const { data: existingCode } = await supabase
@@ -119,16 +122,22 @@ export const useCreateReferralCode = () => {
           break;
         }
 
-        // Generate new code if collision detected
-        const newRandomStr = Math.random().toString(36).substring(2, 8).toUpperCase();
-        finalCode = `REF${userIdHash}${newRandomStr}`;
+        // Generate completely new code if collision detected
+        const newTimestamp = Date.now().toString().slice(-6);
+        const newRandomStr1 = Math.random().toString(36).substring(2, 6).toUpperCase();
+        const newRandomStr2 = Math.random().toString(36).substring(2, 4).toUpperCase();
+        const newUserIdPart = user.id.replace(/-/g, '').substring(Math.floor(Math.random() * 10), 4).toUpperCase();
+        
+        finalCode = `REF${newUserIdPart}${newRandomStr1}${newTimestamp}${newRandomStr2}`;
         attempts++;
-        console.log(`Code collision detected, trying new code: ${finalCode}`);
+        console.log(`Code collision detected, trying new code: ${finalCode} (attempt ${attempts})`);
       }
 
       if (attempts >= maxAttempts) {
-        throw new Error('Unable to generate unique referral code');
+        throw new Error('Unable to generate unique referral code after multiple attempts');
       }
+
+      console.log('Final unique referral code:', finalCode);
 
       const { data, error } = await supabase
         .from('referral_codes')
