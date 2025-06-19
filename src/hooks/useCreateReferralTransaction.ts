@@ -22,7 +22,7 @@ export const useCreateReferralTransaction = () => {
     }) => {
       const cleanCode = referralCode.trim().toUpperCase();
       
-      console.log('🔍 Creating referral transaction:', {
+      console.log('🔄 Creating referral transaction with data:', {
         referralCode: cleanCode,
         orderId,
         orderTotal,
@@ -30,7 +30,7 @@ export const useCreateReferralTransaction = () => {
         referredUserId
       });
 
-      // First validate the referral code and get the referrer
+      // Get referrer info from referral code
       const { data: codeData, error: codeError } = await supabase
         .from('referral_codes')
         .select('user_id, is_active, code')
@@ -38,21 +38,12 @@ export const useCreateReferralTransaction = () => {
         .eq('is_active', true)
         .single();
 
-      if (codeError) {
-        console.error('❌ Referral code validation error:', codeError);
-        throw new Error(`Invalid referral code: ${codeError.message}`);
-      }
-
-      if (!codeData) {
-        console.error('❌ Referral code not found:', cleanCode);
+      if (codeError || !codeData) {
+        console.error('❌ Referral code not found or inactive:', codeError);
         throw new Error('Referral code not found or inactive');
       }
 
-      console.log('✅ Referral code validated:', {
-        code: codeData.code,
-        ownerId: codeData.user_id,
-        isActive: codeData.is_active
-      });
+      console.log('✅ Referral code owner found:', codeData.user_id);
 
       // Prevent self-referral
       if (referredUserId && codeData.user_id === referredUserId) {
@@ -60,7 +51,7 @@ export const useCreateReferralTransaction = () => {
         throw new Error('Cannot use your own referral code');
       }
 
-      // Create the transaction
+      // Create the transaction record
       const { data: transaction, error: transactionError } = await supabase
         .from('referral_transactions')
         .insert({
@@ -80,10 +71,10 @@ export const useCreateReferralTransaction = () => {
         throw new Error(`Failed to create referral transaction: ${transactionError.message}`);
       }
 
-      console.log('✅ Referral transaction created:', transaction.id);
+      console.log('✅ Referral transaction created with ID:', transaction.id);
 
-      // Update referral code stats using the database function
-      console.log('📊 Updating referral stats for code:', cleanCode);
+      // Update referral code statistics
+      console.log('📊 Updating referral code statistics...');
       const { error: statsError } = await supabase.rpc('increment_referral_stats', {
         referral_code: cleanCode,
         commission_amount: commissionAmount
@@ -91,16 +82,16 @@ export const useCreateReferralTransaction = () => {
 
       if (statsError) {
         console.error('❌ Error updating referral stats:', statsError);
-        // Don't throw here as the main transaction was successful
-        console.warn('⚠️ Stats update failed but transaction recorded');
+        console.warn('⚠️ Transaction created but stats update failed');
       } else {
-        console.log('✅ Referral stats updated successfully');
+        console.log('✅ Referral statistics updated successfully');
       }
 
       return transaction as ReferralTransaction;
     },
     onSuccess: (data) => {
-      console.log('🎯 Referral transaction mutation successful, invalidating queries...');
+      console.log('🎯 Referral transaction mutation successful');
+      // Invalidate all related queries
       queryClient.invalidateQueries({ queryKey: ['referral-transactions'] });
       queryClient.invalidateQueries({ queryKey: ['user-referral-code'] });
       queryClient.invalidateQueries({ queryKey: ['admin-referrer-summary'] });

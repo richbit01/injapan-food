@@ -1,153 +1,152 @@
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { useValidateReferralCode } from '@/hooks/useReferralCodes';
-import { useAuth } from '@/hooks/useAuth';
-import { Check, X } from 'lucide-react';
+import { CheckCircle, XCircle, Loader2 } from 'lucide-react';
 
 interface ReferralCodeInputProps {
-  onReferralCodeChange: (code: string | null) => void;
-  initialCode?: string;
+  value?: string;
+  onChange: (code: string) => void;
+  onValidation?: (isValid: boolean, code?: string) => void;
 }
 
-const ReferralCodeInput = ({ onReferralCodeChange, initialCode }: ReferralCodeInputProps) => {
-  const [code, setCode] = useState(initialCode || '');
+const ReferralCodeInput = ({ value = '', onChange, onValidation }: ReferralCodeInputProps) => {
+  const [inputValue, setInputValue] = useState(value);
+  const [validationStatus, setValidationStatus] = useState<'idle' | 'validating' | 'valid' | 'invalid'>('idle');
   const [validatedCode, setValidatedCode] = useState<string | null>(null);
-  const [isValid, setIsValid] = useState(false);
+  
   const validateCode = useValidateReferralCode();
   const { toast } = useToast();
-  const { user } = useAuth();
 
-  useEffect(() => {
-    // Check for referral code in URL on component mount
-    const urlParams = new URLSearchParams(window.location.search);
-    const refCode = urlParams.get('ref');
-    if (refCode && !initialCode) {
-      console.log('Found referral code in URL:', refCode);
-      setCode(refCode);
-      handleValidateCode(refCode);
-    }
-  }, []);
-
-  const handleValidateCode = async (codeToValidate = code) => {
-    if (!codeToValidate.trim()) {
-      setIsValid(false);
+  const handleInputChange = (newValue: string) => {
+    const cleanValue = newValue.trim().toUpperCase();
+    setInputValue(cleanValue);
+    onChange(cleanValue);
+    
+    // Reset validation when input changes
+    if (validationStatus !== 'idle') {
+      setValidationStatus('idle');
       setValidatedCode(null);
-      onReferralCodeChange(null);
+      onValidation?.(false);
+    }
+  };
+
+  const handleValidate = async () => {
+    if (!inputValue || inputValue.trim().length === 0) {
+      toast({
+        title: 'Error',
+        description: 'Masukkan kode referral terlebih dahulu',
+        variant: 'destructive',
+      });
       return;
     }
 
-    console.log('Validating referral code:', codeToValidate);
+    setValidationStatus('validating');
+    console.log('🔍 Validating referral code:', inputValue);
 
     try {
-      const result = await validateCode.mutateAsync(codeToValidate);
+      const result = await validateCode.mutateAsync(inputValue);
+      
       if (result) {
-        // Check if user is trying to use their own referral code
-        if (user && result.user_id === user.id) {
-          setIsValid(false);
-          setValidatedCode(null);
-          onReferralCodeChange(null);
-          toast({
-            title: 'Kode Tidak Valid',
-            description: 'Anda tidak dapat menggunakan kode referral sendiri',
-            variant: 'destructive',
-          });
-          return;
-        }
-
-        setIsValid(true);
-        setValidatedCode(codeToValidate.trim().toUpperCase());
-        onReferralCodeChange(codeToValidate.trim().toUpperCase());
+        console.log('✅ Referral code is valid:', result);
+        setValidationStatus('valid');
+        setValidatedCode(result.code);
+        onValidation?.(true, result.code);
         toast({
-          title: 'Kode Referral Valid!',
-          description: 'Anda akan mendapat manfaat dari referral ini',
+          title: 'Kode Valid!',
+          description: `Kode referral ${result.code} berhasil divalidasi`,
         });
       } else {
-        setIsValid(false);
+        console.log('❌ Referral code is invalid');
+        setValidationStatus('invalid');
         setValidatedCode(null);
-        onReferralCodeChange(null);
+        onValidation?.(false);
         toast({
           title: 'Kode Tidak Valid',
           description: 'Kode referral tidak ditemukan atau tidak aktif',
           variant: 'destructive',
         });
       }
-    } catch (error) {
-      console.error('Error validating referral code:', error);
-      setIsValid(false);
+    } catch (error: any) {
+      console.error('❌ Error validating referral code:', error);
+      setValidationStatus('invalid');
       setValidatedCode(null);
-      onReferralCodeChange(null);
+      onValidation?.(false);
       toast({
         title: 'Error',
-        description: 'Gagal memvalidasi kode referral',
+        description: error.message || 'Gagal memvalidasi kode referral',
         variant: 'destructive',
       });
     }
   };
 
-  const handleClearCode = () => {
-    setCode('');
-    setIsValid(false);
-    setValidatedCode(null);
-    onReferralCodeChange(null);
-    console.log('Referral code cleared');
+  const getStatusIcon = () => {
+    switch (validationStatus) {
+      case 'validating':
+        return <Loader2 className="w-4 h-4 animate-spin text-blue-500" />;
+      case 'valid':
+        return <CheckCircle className="w-4 h-4 text-green-500" />;
+      case 'invalid':
+        return <XCircle className="w-4 h-4 text-red-500" />;
+      default:
+        return null;
+    }
   };
 
   return (
     <div className="space-y-3">
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Kode Referral (Opsional)
-        </label>
-        <div className="flex space-x-2">
-          <div className="flex-1 relative">
-            <Input
-              value={code}
-              onChange={(e) => setCode(e.target.value.toUpperCase())}
-              placeholder="Masukkan kode referral..."
-              disabled={validateCode.isPending}
-              className={isValid ? 'border-green-500' : ''}
-            />
-            {isValid && (
-              <Check className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-green-600" />
-            )}
+      <Label htmlFor="referralCode">Kode Referral (Opsional)</Label>
+      <div className="flex gap-2">
+        <div className="relative flex-1">
+          <Input
+            id="referralCode"
+            value={inputValue}
+            onChange={(e) => handleInputChange(e.target.value)}
+            placeholder="Masukkan kode referral..."
+            className={`pr-8 ${
+              validationStatus === 'valid' ? 'border-green-500' :
+              validationStatus === 'invalid' ? 'border-red-500' : ''
+            }`}
+          />
+          <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
+            {getStatusIcon()}
           </div>
-          <Button 
-            variant="outline" 
-            onClick={() => handleValidateCode()}
-            disabled={validateCode.isPending || !code.trim()}
-          >
-            {validateCode.isPending ? 'Validasi...' : 'Validasi'}
-          </Button>
         </div>
+        <Button 
+          type="button"
+          variant="outline" 
+          onClick={handleValidate}
+          disabled={!inputValue || validationStatus === 'validating'}
+        >
+          {validationStatus === 'validating' ? 'Validasi...' : 'Validasi'}
+        </Button>
       </div>
 
-      {validatedCode && isValid && (
-        <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
-          <div className="flex items-center space-x-2">
-            <Badge variant="default" className="bg-green-600">
-              <Check className="w-3 h-3 mr-1" />
-              Kode Valid
-            </Badge>
-            <span className="text-sm font-medium">{validatedCode}</span>
-          </div>
-          <Button variant="ghost" size="sm" onClick={handleClearCode}>
-            <X className="w-4 h-4" />
-          </Button>
-        </div>
+      {validationStatus === 'valid' && validatedCode && (
+        <Alert className="border-green-200 bg-green-50">
+          <CheckCircle className="h-4 w-4 text-green-600" />
+          <AlertDescription className="text-green-700">
+            Kode referral <strong>{validatedCode}</strong> valid! Anda akan mendapat potongan atau benefit saat checkout.
+          </AlertDescription>
+        </Alert>
       )}
 
-      {code && !isValid && !validateCode.isPending && (
-        <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-          <div className="flex items-center space-x-2">
-            <X className="w-4 h-4 text-red-600" />
-            <span className="text-sm text-red-600">Kode referral tidak valid</span>
-          </div>
-        </div>
+      {validationStatus === 'invalid' && (
+        <Alert variant="destructive">
+          <XCircle className="h-4 w-4" />
+          <AlertDescription>
+            Kode referral tidak valid atau sudah tidak aktif. Pastikan kode yang dimasukkan benar.
+          </AlertDescription>
+        </Alert>
       )}
+
+      <p className="text-sm text-gray-600">
+        Masukkan kode referral dari teman untuk mendapat benefit khusus
+      </p>
     </div>
   );
 };
