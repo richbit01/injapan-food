@@ -267,6 +267,8 @@ export type Database = {
       referral_transactions: {
         Row: {
           commission_amount: number
+          confirmed_at: string | null
+          confirmed_by: string | null
           created_at: string
           id: string
           order_id: string
@@ -278,6 +280,8 @@ export type Database = {
         }
         Insert: {
           commission_amount: number
+          confirmed_at?: string | null
+          confirmed_by?: string | null
           created_at?: string
           id?: string
           order_id: string
@@ -289,6 +293,8 @@ export type Database = {
         }
         Update: {
           commission_amount?: number
+          confirmed_at?: string | null
+          confirmed_by?: string | null
           created_at?: string
           id?: string
           order_id?: string
@@ -298,7 +304,15 @@ export type Database = {
           referrer_id?: string
           status?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "referral_transactions_confirmed_by_fkey"
+            columns: ["confirmed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       settings_history: {
         Row: {
@@ -335,6 +349,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cancel_referral_transaction: {
+        Args: { transaction_id: string; admin_id: string }
+        Returns: undefined
+      }
+      confirm_referral_transaction: {
+        Args: { transaction_id: string; admin_id: string }
+        Returns: undefined
+      }
       increment_referral_stats: {
         Args: { referral_code: string; commission_amount: number }
         Returns: undefined

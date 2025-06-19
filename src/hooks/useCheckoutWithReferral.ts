@@ -2,7 +2,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { useCreateReferralTransaction } from '@/hooks/useCreateReferralTransaction';
 import { useReferralCommission } from '@/hooks/useReferralCommission';
 
 interface CheckoutData {
@@ -29,12 +28,11 @@ interface CheckoutData {
 export const useCheckoutWithReferral = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const createReferralTransaction = useCreateReferralTransaction();
   const { calculateCommission } = useReferralCommission();
 
   return useMutation({
     mutationFn: async (checkoutData: CheckoutData) => {
-      console.log('🛒 [REALTIME] Starting checkout process:', {
+      console.log('🛒 [CHECKOUT] Starting checkout process:', {
         totalPrice: checkoutData.totalPrice,
         referralCode: checkoutData.referralCode,
         userId: user?.id,
@@ -42,16 +40,16 @@ export const useCheckoutWithReferral = () => {
         timestamp: new Date().toISOString()
       });
 
-      // Step 1: Create order immediately in database
+      // Step 1: Create order with pending status
       const orderData = {
         user_id: user?.id || null,
         items: checkoutData.items,
         customer_info: checkoutData.customerInfo,
         total_price: checkoutData.totalPrice,
-        status: 'pending'
+        status: 'pending' // Always pending until admin confirms
       };
 
-      console.log('📝 [REALTIME] Creating order in database...');
+      console.log('📝 [CHECKOUT] Creating order in database...');
       const { data: order, error: orderError } = await supabase
         .from('orders')
         .insert(orderData)
@@ -59,21 +57,22 @@ export const useCheckoutWithReferral = () => {
         .single();
 
       if (orderError) {
-        console.error('❌ [REALTIME] Order creation failed:', orderError);
+        console.error('❌ [CHECKOUT] Order creation failed:', orderError);
         throw new Error(`Failed to create order: ${orderError.message}`);
       }
 
-      console.log('✅ [REALTIME] Order saved to database:', {
+      console.log('✅ [CHECKOUT] Order saved to database:', {
         orderId: order.id,
+        status: order.status,
         timestamp: new Date().toISOString()
       });
 
-      // Step 2: Process referral immediately if code provided
+      // Step 2: Create pending referral transaction if code provided
       if (checkoutData.referralCode && checkoutData.referralCode.trim()) {
         const cleanCode = checkoutData.referralCode.trim().toUpperCase();
         
         try {
-          console.log('💰 [REALTIME] Processing referral commission for code:', cleanCode);
+          console.log('💰 [CHECKOUT] Processing referral code for pending approval:', cleanCode);
           
           // Validate referral code first
           const { data: referralCodeData, error: validationError } = await supabase
@@ -84,7 +83,7 @@ export const useCheckoutWithReferral = () => {
             .single();
 
           if (validationError || !referralCodeData) {
-            console.warn('⚠️ [REALTIME] Invalid referral code, skipping commission:', {
+            console.warn('⚠️ [CHECKOUT] Invalid referral code, skipping:', {
               code: cleanCode,
               error: validationError
             });
@@ -93,80 +92,94 @@ export const useCheckoutWithReferral = () => {
 
           // Prevent self-referral
           if (user?.id && referralCodeData.user_id === user.id) {
-            console.warn('⚠️ [REALTIME] Self-referral detected, skipping commission');
+            console.warn('⚠️ [CHECKOUT] Self-referral detected, skipping');
             return order;
           }
 
-          // Calculate commission based on current settings
+          // Calculate commission but DON'T update stats yet
           const commissionAmount = calculateCommission(checkoutData.totalPrice);
           
-          console.log('💰 [REALTIME] Commission calculated:', {
+          console.log('💰 [CHECKOUT] Commission calculated for pending approval:', {
             orderTotal: checkoutData.totalPrice,
             commissionAmount,
             referrerUserId: referralCodeData.user_id,
             referredUserId: user?.id || 'guest'
           });
 
-          // Create referral transaction immediately
-          console.log('📝 [REALTIME] Saving referral transaction to database...');
-          const transactionResult = await createReferralTransaction.mutateAsync({
-            referralCode: cleanCode,
-            orderId: order.id,
-            orderTotal: checkoutData.totalPrice,
-            commissionAmount,
-            referredUserId: user?.id
-          });
+          // Create PENDING referral transaction (no stats update)
+          const transactionData = {
+            referrer_id: referralCodeData.user_id,
+            referred_user_id: user?.id || null,
+            referral_code: cleanCode,
+            order_id: order.id,
+            commission_amount: commissionAmount,
+            order_total: checkoutData.totalPrice,
+            status: 'pending' // Wait for admin confirmation
+          };
 
-          console.log('✅ [REALTIME] Referral transaction saved:', {
-            transactionId: transactionResult.id,
-            timestamp: new Date().toISOString()
-          });
+          console.log('📝 [CHECKOUT] Creating pending referral transaction...');
+          const { data: transaction, error: transactionError } = await supabase
+            .from('referral_transactions')
+            .insert(transactionData)
+            .select()
+            .single();
 
-          // Force immediate UI refresh
-          queryClient.invalidateQueries({ queryKey: ['referral-transactions'] });
-          queryClient.invalidateQueries({ queryKey: ['user-referral-code'] });
-          queryClient.invalidateQueries({ queryKey: ['admin-referrer-summary'] });
-          queryClient.invalidateQueries({ queryKey: ['admin-referral-details'] });
-
-          console.log('🔄 [REALTIME] All queries invalidated for immediate UI update');
+          if (transactionError) {
+            console.error('❌ [CHECKOUT] Referral transaction creation failed:', {
+              error: transactionError,
+              data: transactionData
+            });
+            // Don't fail the order if referral processing fails
+            console.warn('⚠️ [CHECKOUT] Order successful but referral processing failed');
+          } else {
+            console.log('✅ [CHECKOUT] Pending referral transaction created:', {
+              transactionId: transaction.id,
+              status: transaction.status,
+              awaitingConfirmation: true,
+              timestamp: new Date().toISOString()
+            });
+          }
 
         } catch (referralError: any) {
-          console.error('❌ [REALTIME] Referral processing failed:', {
+          console.error('❌ [CHECKOUT] Referral processing failed:', {
             error: referralError,
             message: referralError.message,
             orderId: order.id
           });
           // Don't fail the order if referral processing fails
-          console.warn('⚠️ [REALTIME] Order successful but referral processing failed');
+          console.warn('⚠️ [CHECKOUT] Order successful but referral processing failed');
         }
       } else {
-        console.log('ℹ️ [REALTIME] No referral code provided, skipping commission processing');
+        console.log('ℹ️ [CHECKOUT] No referral code provided');
       }
 
-      console.log('✅ [REALTIME] Checkout completed successfully:', {
+      console.log('✅ [CHECKOUT] Checkout completed successfully:', {
         orderId: order.id,
+        hasReferral: !!checkoutData.referralCode,
+        awaitingAdminConfirmation: true,
         timestamp: new Date().toISOString()
       });
       
       return order;
     },
     onSuccess: (order) => {
-      console.log('🎉 [REALTIME] Checkout mutation successful:', {
+      console.log('🎉 [CHECKOUT] Checkout mutation successful:', {
         orderId: order.id,
+        status: order.status,
         timestamp: new Date().toISOString()
       });
       
-      // Invalidate all relevant queries for immediate UI updates
+      // Invalidate queries for immediate UI updates
       queryClient.invalidateQueries({ queryKey: ['orders'] });
       queryClient.invalidateQueries({ queryKey: ['referral-transactions'] });
       queryClient.invalidateQueries({ queryKey: ['user-referral-code'] });
       queryClient.invalidateQueries({ queryKey: ['admin-referrer-summary'] });
       queryClient.invalidateQueries({ queryKey: ['admin-referral-details'] });
       
-      console.log('🔄 [REALTIME] All data refreshed for realtime updates');
+      console.log('🔄 [CHECKOUT] All data refreshed for pending confirmation');
     },
     onError: (error) => {
-      console.error('💥 [REALTIME] Checkout failed completely:', {
+      console.error('💥 [CHECKOUT] Checkout failed completely:', {
         error,
         timestamp: new Date().toISOString()
       });

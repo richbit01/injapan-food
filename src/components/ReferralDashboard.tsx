@@ -1,256 +1,283 @@
 
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Copy, Users, DollarSign, TrendingUp, Clock, CheckCircle } from 'lucide-react';
+import { useUserReferralCode } from '@/hooks/useUserReferralCode';
+import { useReferralTransactions } from '@/hooks/useReferralTransactions';
+import { useCreateReferralCode } from '@/hooks/useCreateReferralCode';
 import { useToast } from '@/hooks/use-toast';
-import { useUserReferralCode, useCreateReferralCode, useReferralTransactions } from '@/hooks/useReferralCodes';
-import { Copy, Share2, DollarSign, Users, TrendingUp, RefreshCw, AlertCircle } from 'lucide-react';
 
 const ReferralDashboard = () => {
-  const { data: referralCode, isLoading, refetch: refetchCode, error: fetchError } = useUserReferralCode();
-  const { data: transactions = [], refetch: refetchTransactions } = useReferralTransactions();
-  const createCode = useCreateReferralCode();
+  const { data: referralCode, isLoading: codeLoading } = useUserReferralCode();
+  const { data: transactions = [], isLoading: transactionsLoading } = useReferralTransactions();
+  const createReferralCode = useCreateReferralCode();
   const { toast } = useToast();
+  const [isGenerating, setIsGenerating] = useState(false);
 
-  // Use production domain
-  const baseUrl = 'https://bitkode.site';
-  
-  const [shareUrl, setShareUrl] = useState('');
+  // Calculate pending vs confirmed stats
+  const pendingTransactions = transactions.filter(t => t.status === 'pending');
+  const confirmedTransactions = transactions.filter(t => t.status === 'confirmed');
+  const cancelledTransactions = transactions.filter(t => t.status === 'cancelled');
 
-  const handleCreateCode = async () => {
+  const pendingCommission = pendingTransactions.reduce((sum, t) => sum + Number(t.commission_amount), 0);
+  const confirmedCommission = confirmedTransactions.reduce((sum, t) => sum + Number(t.commission_amount), 0);
+
+  const handleGenerateCode = async () => {
+    setIsGenerating(true);
     try {
-      await createCode.mutateAsync();
+      await createReferralCode.mutateAsync();
       toast({
-        title: 'Berhasil!',
-        description: 'Kode referral telah dibuat',
+        title: 'Kode Referral Berhasil Dibuat',
+        description: 'Kode referral Anda telah berhasil dibuat dan siap digunakan',
       });
     } catch (error: any) {
-      console.error('Create referral code error:', error);
       toast({
-        title: 'Error',
-        description: error.message || 'Gagal membuat kode referral',
+        title: 'Gagal Membuat Kode Referral',
+        description: error.message || 'Terjadi kesalahan saat membuat kode referral',
         variant: 'destructive',
       });
+    } finally {
+      setIsGenerating(false);
     }
   };
 
   const handleCopyCode = () => {
-    if (referralCode) {
+    if (referralCode?.code) {
       navigator.clipboard.writeText(referralCode.code);
       toast({
-        title: 'Berhasil!',
-        description: 'Kode referral telah disalin',
+        title: 'Kode Berhasil Disalin',
+        description: 'Kode referral telah disalin ke clipboard',
       });
     }
   };
 
   const handleCopyLink = () => {
-    if (referralCode) {
-      const url = `${baseUrl}?ref=${referralCode.code}`;
-      navigator.clipboard.writeText(url);
+    if (referralCode?.code) {
+      const link = `${window.location.origin}?ref=${referralCode.code}`;
+      navigator.clipboard.writeText(link);
       toast({
-        title: 'Berhasil!',
-        description: 'Link referral telah disalin',
+        title: 'Link Berhasil Disalin',
+        description: 'Link referral telah disalin ke clipboard',
       });
     }
   };
 
-  const handleRefreshData = () => {
-    console.log('Manual refresh triggered');
-    refetchCode();
-    refetchTransactions();
-    toast({
-      title: 'Data Diperbarui',
-      description: 'Data referral telah dimuat ulang',
+  const formatPrice = (price: number) => {
+    return `¥${price.toLocaleString()}`;
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('id-ID', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
     });
   };
 
-  const totalCommission = transactions.reduce((sum, t) => sum + t.commission_amount, 0);
-  const pendingCommission = transactions
-    .filter(t => t.status === 'pending')
-    .reduce((sum, t) => sum + t.commission_amount, 0);
-
-  console.log('ReferralDashboard render:', {
-    referralCode: referralCode?.code,
-    totalUses: referralCode?.total_uses,
-    transactionsCount: transactions.length,
-    totalCommission,
-    pendingCommission,
-    isLoading,
-    error: fetchError
-  });
-
-  if (isLoading) {
+  if (codeLoading || transactionsLoading) {
     return (
-      <div className="flex items-center justify-center h-32">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="animate-pulse bg-gray-200 h-32 rounded-lg"></div>
+          ))}
+        </div>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      {/* Error Alert */}
-      {fetchError && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            Gagal memuat data referral. Silakan refresh halaman atau coba lagi nanti.
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {/* Debug Info - Remove in production */}
-      <Card className="bg-yellow-50 border-yellow-200">
-        <CardContent className="p-4">
-          <div className="text-sm space-y-1">
-            <p><strong>Debug Info:</strong></p>
-            <p>Kode Referral: {referralCode?.code || 'Tidak ada'}</p>
-            <p>Total Uses: {referralCode?.total_uses || 0}</p>
-            <p>Total Commission Earned: ¥{referralCode?.total_commission_earned || 0}</p>
-            <p>Transaksi Ditemukan: {transactions.length}</p>
-            <p>Status Loading: {isLoading ? 'Ya' : 'Tidak'}</p>
-            <p>Create Code Loading: {createCode.isPending ? 'Ya' : 'Tidak'}</p>
-            <Button variant="outline" size="sm" onClick={handleRefreshData} className="mt-2">
-              <RefreshCw className="w-4 h-4 mr-1" />
-              Refresh Data
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* Statistics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center space-x-2">
-              <DollarSign className="w-5 h-5 text-green-600" />
-              <div>
-                <p className="text-sm text-gray-600">Total Komisi</p>
-                <p className="text-2xl font-bold">¥{totalCommission.toLocaleString()}</p>
-              </div>
-            </div>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-gray-600">
+              Total Referral
+            </CardTitle>
+            <Users className="w-4 h-4 text-blue-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{referralCode?.total_uses || 0}</div>
+            <p className="text-xs text-gray-500">Kode digunakan</p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center space-x-2">
-              <TrendingUp className="w-5 h-5 text-blue-600" />
-              <div>
-                <p className="text-sm text-gray-600">Komisi Pending</p>
-                <p className="text-2xl font-bold">¥{pendingCommission.toLocaleString()}</p>
-              </div>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-gray-600">
+              Komisi Pending
+            </CardTitle>
+            <Clock className="w-4 h-4 text-yellow-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-yellow-600">
+              {formatPrice(pendingCommission)}
             </div>
+            <p className="text-xs text-gray-500">
+              {pendingTransactions.length} transaksi menunggu konfirmasi
+            </p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center space-x-2">
-              <Users className="w-5 h-5 text-purple-600" />
-              <div>
-                <p className="text-sm text-gray-600">Total Referral</p>
-                <p className="text-2xl font-bold">{referralCode?.total_uses || 0}</p>
-              </div>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-gray-600">
+              Komisi Terkonfirmasi
+            </CardTitle>
+            <CheckCircle className="w-4 h-4 text-green-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">
+              {formatPrice(confirmedCommission)}
             </div>
+            <p className="text-xs text-gray-500">
+              {confirmedTransactions.length} transaksi dikonfirmasi
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-gray-600">
+              Total Komisi
+            </CardTitle>
+            <DollarSign className="w-4 h-4 text-purple-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-purple-600">
+              {formatPrice(referralCode?.total_commission_earned || 0)}
+            </div>
+            <p className="text-xs text-gray-500">Komisi yang sudah diterima</p>
           </CardContent>
         </Card>
       </div>
 
+      {/* Referral Code Section */}
       <Card>
         <CardHeader>
-          <CardTitle>Kode Referral Anda</CardTitle>
+          <CardTitle className="flex items-center space-x-2">
+            <TrendingUp className="w-5 h-5" />
+            <span>Kode Referral Anda</span>
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {!referralCode ? (
-            <div className="text-center py-8">
-              <p className="text-gray-600 mb-4">Anda belum memiliki kode referral</p>
-              <Button 
-                onClick={handleCreateCode} 
-                disabled={createCode.isPending}
-                className="min-w-[120px]"
-              >
-                {createCode.isPending ? (
-                  <div className="flex items-center space-x-2">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                    <span>Membuat...</span>
-                  </div>
-                ) : (
-                  'Buat Kode Referral'
-                )}
-              </Button>
-              {createCode.error && (
-                <Alert variant="destructive" className="mt-4">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>
-                    {createCode.error.message || 'Gagal membuat kode referral'}
-                  </AlertDescription>
-                </Alert>
-              )}
-            </div>
-          ) : (
+          {referralCode ? (
             <div className="space-y-4">
               <div>
-                <label className="text-sm font-medium">Kode Referral</label>
-                <div className="flex items-center space-x-2 mt-1">
-                  <Input value={referralCode.code} readOnly />
-                  <Button variant="outline" size="sm" onClick={handleCopyCode}>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Kode Referral
+                </label>
+                <div className="flex space-x-2">
+                  <Input
+                    value={referralCode.code}
+                    readOnly
+                    className="font-mono"
+                  />
+                  <Button onClick={handleCopyCode} variant="outline">
+                    <Copy className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Link Referral
+                </label>
+                <div className="flex space-x-2">
+                  <Input
+                    value={`${window.location.origin}?ref=${referralCode.code}`}
+                    readOnly
+                    className="text-sm"
+                  />
+                  <Button onClick={handleCopyLink} variant="outline">
                     <Copy className="w-4 h-4" />
                   </Button>
                 </div>
               </div>
 
-              <div>
-                <label className="text-sm font-medium">Link Referral</label>
-                <div className="flex items-center space-x-2 mt-1">
-                  <Input 
-                    value={`${baseUrl}?ref=${referralCode.code}`} 
-                    readOnly 
-                  />
-                  <Button variant="outline" size="sm" onClick={handleCopyLink}>
-                    <Share2 className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-
               <div className="bg-blue-50 p-4 rounded-lg">
-                <h4 className="font-semibold mb-2">Cara Menggunakan:</h4>
-                <ol className="text-sm space-y-1">
-                  <li>1. Bagikan kode atau link referral kepada teman</li>
-                  <li>2. Ketika mereka berbelanja menggunakan kode Anda</li>
-                  <li>3. Anda akan mendapat komisi otomatis</li>
-                </ol>
+                <h4 className="font-medium text-blue-900 mb-2">Cara Menggunakan Kode Referral:</h4>
+                <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
+                  <li>Bagikan kode atau link referral kepada teman/keluarga</li>
+                  <li>Mereka memasukkan kode saat checkout</li>
+                  <li>Admin akan mengkonfirmasi pesanan setelah pembayaran</li>
+                  <li>Komisi Anda akan masuk setelah konfirmasi admin</li>
+                </ul>
               </div>
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <div className="text-6xl mb-4">🎯</div>
+              <h3 className="text-lg font-semibold mb-2">Belum Ada Kode Referral</h3>
+              <p className="text-gray-600 mb-4">
+                Buat kode referral untuk mulai mendapatkan komisi
+              </p>
+              <Button 
+                onClick={handleGenerateCode}
+                disabled={isGenerating}
+                className="bg-primary hover:bg-primary/90"
+              >
+                {isGenerating ? (
+                  <div className="flex items-center space-x-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    <span>Membuat Kode...</span>
+                  </div>
+                ) : (
+                  'Buat Kode Referral'
+                )}
+              </Button>
             </div>
           )}
         </CardContent>
       </Card>
 
+      {/* Transaction History */}
       {transactions.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Riwayat Komisi</CardTitle>
+            <CardTitle>Riwayat Transaksi Referral</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {transactions.slice(0, 5).map((transaction) => (
-                <div key={transaction.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div>
-                    <p className="font-medium">Order #{transaction.order_id.slice(0, 8)}</p>
-                    <p className="text-sm text-gray-600">
-                      {new Date(transaction.created_at).toLocaleDateString('id-ID')}
-                    </p>
+            <div className="space-y-4">
+              {transactions.map((transaction) => (
+                <div 
+                  key={transaction.id} 
+                  className="flex items-center justify-between p-4 border rounded-lg"
+                >
+                  <div className="space-y-1">
+                    <div className="font-medium">Order #{transaction.order_id.slice(0, 8)}</div>
+                    <div className="text-sm text-gray-500">
+                      {formatDate(transaction.created_at)}
+                    </div>
+                    <div className="text-sm">
+                      Total Pesanan: {formatPrice(Number(transaction.order_total))}
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <p className="font-medium">¥{transaction.commission_amount.toLocaleString()}</p>
-                    <Badge variant={
-                      transaction.status === 'paid' ? 'default' : 
-                      transaction.status === 'pending' ? 'secondary' : 'destructive'
-                    }>
-                      {transaction.status}
+                  <div className="text-right space-y-1">
+                    <div className="font-bold text-lg">
+                      {formatPrice(Number(transaction.commission_amount))}
+                    </div>
+                    <Badge 
+                      className={
+                        transaction.status === 'confirmed' 
+                          ? 'bg-green-100 text-green-800'
+                          : transaction.status === 'pending'
+                          ? 'bg-yellow-100 text-yellow-800'
+                          : 'bg-red-100 text-red-800'
+                      }
+                    >
+                      {transaction.status === 'confirmed' 
+                        ? 'Terkonfirmasi' 
+                        : transaction.status === 'pending'
+                        ? 'Menunggu Konfirmasi'
+                        : 'Dibatalkan'
+                      }
                     </Badge>
                   </div>
                 </div>

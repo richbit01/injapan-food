@@ -22,7 +22,7 @@ export const useCreateReferralTransaction = () => {
     }) => {
       const cleanCode = referralCode.trim().toUpperCase();
       
-      console.log('🔄 [REALTIME] Creating referral transaction:', {
+      console.log('🔄 [REFERRAL] Creating pending referral transaction:', {
         referralCode: cleanCode,
         orderId,
         orderTotal,
@@ -34,13 +34,13 @@ export const useCreateReferralTransaction = () => {
       // Get referrer info
       const { data: codeData, error: codeError } = await supabase
         .from('referral_codes')
-        .select('user_id, is_active, code, total_uses, total_commission_earned')
+        .select('user_id, is_active, code')
         .eq('code', cleanCode)
         .eq('is_active', true)
         .single();
 
       if (codeError || !codeData) {
-        console.error('❌ [REALTIME] Referral code validation failed:', {
+        console.error('❌ [REFERRAL] Referral code validation failed:', {
           code: cleanCode,
           error: codeError
         });
@@ -49,11 +49,11 @@ export const useCreateReferralTransaction = () => {
 
       // Prevent self-referral
       if (referredUserId && codeData.user_id === referredUserId) {
-        console.error('❌ [REALTIME] Self-referral attempt blocked');
+        console.error('❌ [REFERRAL] Self-referral attempt blocked');
         throw new Error('Cannot use your own referral code');
       }
 
-      // Create transaction record immediately
+      // Create PENDING transaction record (no stats update)
       const transactionData = {
         referrer_id: codeData.user_id,
         referred_user_id: referredUserId || null,
@@ -61,10 +61,10 @@ export const useCreateReferralTransaction = () => {
         order_id: orderId,
         commission_amount: commissionAmount,
         order_total: orderTotal,
-        status: 'pending' as const
+        status: 'pending' as const // Wait for admin confirmation
       };
 
-      console.log('📝 [REALTIME] Inserting transaction to database...');
+      console.log('📝 [REFERRAL] Inserting pending transaction to database...');
       const { data: transaction, error: transactionError } = await supabase
         .from('referral_transactions')
         .insert(transactionData)
@@ -72,56 +72,43 @@ export const useCreateReferralTransaction = () => {
         .single();
 
       if (transactionError) {
-        console.error('❌ [REALTIME] Transaction creation failed:', {
+        console.error('❌ [REFERRAL] Transaction creation failed:', {
           error: transactionError,
           data: transactionData
         });
         throw new Error(`Failed to create referral transaction: ${transactionError.message}`);
       }
 
-      console.log('✅ [REALTIME] Transaction saved to database:', {
+      console.log('✅ [REFERRAL] Pending transaction saved to database:', {
         transactionId: transaction.id,
+        status: transaction.status,
+        awaitingConfirmation: true,
         timestamp: new Date().toISOString()
       });
 
-      // Update referral statistics immediately
-      console.log('📊 [REALTIME] Updating referral statistics...');
-      const { data: statsResult, error: statsError } = await supabase.rpc('increment_referral_stats', {
-        referral_code: cleanCode,
-        commission_amount: commissionAmount
-      });
-
-      if (statsError) {
-        console.error('❌ [REALTIME] Stats update failed:', statsError);
-        // Don't throw error here, transaction is already saved
-        console.warn('⚠️ [REALTIME] Transaction saved but stats update failed');
-      } else {
-        console.log('✅ [REALTIME] Statistics updated successfully:', {
-          code: cleanCode,
-          addedCommission: commissionAmount,
-          timestamp: new Date().toISOString()
-        });
-      }
-
-      console.log('🎉 [REALTIME] Referral transaction completed successfully');
+      // DO NOT update referral statistics yet - wait for admin confirmation
+      console.log('⏳ [REFERRAL] Transaction created with pending status, awaiting admin confirmation');
+      
       return transaction as ReferralTransaction;
     },
     onSuccess: (data) => {
-      console.log('🎯 [REALTIME] Transaction mutation successful, forcing immediate UI refresh...');
+      console.log('🎯 [REFERRAL] Pending transaction mutation successful:', {
+        transactionId: data.id,
+        status: data.status,
+        timestamp: new Date().toISOString()
+      });
       
       // Force immediate invalidation of all related queries
       queryClient.invalidateQueries({ queryKey: ['referral-transactions'] });
       queryClient.invalidateQueries({ queryKey: ['user-referral-code'] });
       queryClient.invalidateQueries({ queryKey: ['admin-referrer-summary'] });
       queryClient.invalidateQueries({ queryKey: ['admin-referral-details'] });
-      
-      // Also refresh orders
       queryClient.invalidateQueries({ queryKey: ['orders'] });
       
-      console.log('🔄 [REALTIME] All data invalidated for immediate UI updates');
+      console.log('🔄 [REFERRAL] All data invalidated for pending transaction updates');
     },
     onError: (error) => {
-      console.error('💥 [REALTIME] Referral transaction mutation failed:', error);
+      console.error('💥 [REFERRAL] Referral transaction mutation failed:', error);
     }
   });
 };
