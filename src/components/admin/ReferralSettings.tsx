@@ -10,12 +10,14 @@ import { useReferralCommissionRate, useUpdateAppSetting, useSettingsHistory } fr
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { AlertCircle, Save, History } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useQueryClient } from '@tanstack/react-query';
 
 const ReferralSettings = () => {
   const { data: currentRate, isLoading } = useReferralCommissionRate();
   const { data: history = [] } = useSettingsHistory('referral_commission_rate');
   const updateSetting = useUpdateAppSetting();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const [newRate, setNewRate] = useState<string>('');
   const [notes, setNotes] = useState<string>('');
@@ -45,6 +47,10 @@ const ReferralSettings = () => {
         newValue: { rate },
         notes: notes || undefined
       });
+
+      // Invalidate related queries to ensure fresh data
+      await queryClient.invalidateQueries({ queryKey: ['app-setting', 'referral_commission_rate'] });
+      await queryClient.invalidateQueries({ queryKey: ['settings-history', 'referral_commission_rate'] });
 
       toast({
         title: 'Berhasil',

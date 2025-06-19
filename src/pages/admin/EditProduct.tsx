@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useProduct } from '@/hooks/useProducts';
@@ -12,10 +13,12 @@ import { Label } from '@/components/ui/label';
 import { Save, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import AdminLayout from '@/components/admin/AdminLayout';
+import { useQueryClient } from '@tanstack/react-query';
 
 const EditProduct = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { data: product, isLoading } = useProduct(id!);
   const [loading, setLoading] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -189,6 +192,16 @@ const EditProduct = () => {
         .eq('id', id!);
 
       if (error) throw error;
+
+      // Invalidate and refetch all product-related queries
+      await queryClient.invalidateQueries({ queryKey: ['products'] });
+      await queryClient.invalidateQueries({ queryKey: ['product', id] });
+      await queryClient.invalidateQueries({ queryKey: ['categories'] });
+
+      // Force refetch the specific product
+      await queryClient.refetchQueries({ queryKey: ['product', id] });
+
+      console.log('Product updated successfully, cache invalidated');
 
       toast({
         title: "Berhasil!",

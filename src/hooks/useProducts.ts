@@ -32,6 +32,8 @@ export const useProducts = () => {
       console.log('Processed products:', products);
       return products;
     },
+    staleTime: 0, // Always refetch when cache is invalidated
+    gcTime: 1000 * 60 * 5, // Keep in cache for 5 minutes
   });
 };
 
@@ -72,5 +74,7 @@ export const useProduct = (id: string) => {
       };
     },
     enabled: !!id,
+    staleTime: 0, // Always refetch when cache is invalidated
+    gcTime: 1000 * 60 * 5, // Keep in cache for 5 minutes
   });
 };
