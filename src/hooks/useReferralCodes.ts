@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -34,6 +33,8 @@ export const useUserReferralCode = () => {
   useEffect(() => {
     if (!user?.id) return;
 
+    console.log('Setting up real-time subscription for referral codes, user:', user.id);
+
     const channel = supabase
       .channel('referral-codes-changes')
       .on(
@@ -52,6 +53,7 @@ export const useUserReferralCode = () => {
       .subscribe();
 
     return () => {
+      console.log('Cleaning up referral codes subscription');
       supabase.removeChannel(channel);
     };
   }, [user?.id, queryClient]);
@@ -162,6 +164,8 @@ export const useReferralTransactions = () => {
   useEffect(() => {
     if (!user?.id) return;
 
+    console.log('Setting up real-time subscription for referral transactions, user:', user.id);
+
     const channel = supabase
       .channel('referral-transactions-changes')
       .on(
@@ -175,11 +179,14 @@ export const useReferralTransactions = () => {
         (payload) => {
           console.log('Real-time referral transaction update:', payload);
           queryClient.invalidateQueries({ queryKey: ['referral-transactions', user.id] });
+          // Also invalidate referral code to update stats
+          queryClient.invalidateQueries({ queryKey: ['user-referral-code', user.id] });
         }
       )
       .subscribe();
 
     return () => {
+      console.log('Cleaning up referral transactions subscription');
       supabase.removeChannel(channel);
     };
   }, [user?.id, queryClient]);
@@ -202,7 +209,7 @@ export const useReferralTransactions = () => {
         throw error;
       }
 
-      console.log('Referral transactions:', data);
+      console.log('Referral transactions found:', data?.length || 0, 'transactions:', data);
       return (data as ReferralTransaction[]) || [];
     },
     enabled: !!user?.id,
@@ -303,9 +310,10 @@ export const useCreateReferralTransaction = () => {
         throw error;
       }
 
-      console.log('Referral transaction created:', data);
+      console.log('Referral transaction created successfully:', data);
 
       // Update referral code stats using the database function
+      console.log('Updating referral stats for code:', referralCode.trim().toUpperCase());
       const { error: statsError } = await supabase.rpc('increment_referral_stats', {
         referral_code: referralCode.trim().toUpperCase(),
         commission_amount: commissionAmount
@@ -320,9 +328,12 @@ export const useCreateReferralTransaction = () => {
 
       return data as ReferralTransaction;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('Referral transaction mutation successful, invalidating queries...');
       queryClient.invalidateQueries({ queryKey: ['referral-transactions'] });
       queryClient.invalidateQueries({ queryKey: ['user-referral-code'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-referrer-summary'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-referral-details'] });
     },
   });
 };

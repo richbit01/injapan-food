@@ -36,7 +36,8 @@ export const useCheckoutWithReferral = () => {
     mutationFn: async (checkoutData: CheckoutData) => {
       console.log('Processing checkout with referral:', {
         ...checkoutData,
-        items: checkoutData.items.length + ' items'
+        items: checkoutData.items.length + ' items',
+        hasReferralCode: !!checkoutData.referralCode
       });
 
       // Create the order first
@@ -72,7 +73,7 @@ export const useCheckoutWithReferral = () => {
             referredUserId: user?.id
           });
 
-          await createReferralTransaction.mutateAsync({
+          const referralResult = await createReferralTransaction.mutateAsync({
             referralCode: checkoutData.referralCode,
             orderId: order.id,
             orderTotal: checkoutData.totalPrice,
@@ -80,11 +81,11 @@ export const useCheckoutWithReferral = () => {
             referredUserId: user?.id
           });
 
-          console.log('Referral transaction processed successfully');
+          console.log('Referral transaction processed successfully:', referralResult);
         } catch (referralError) {
           console.error('Error processing referral transaction:', referralError);
-          // Log the error but don't fail the order
-          // You might want to implement a retry mechanism here
+          // Log the error but don't fail the order - this is important for user experience
+          console.error('Referral processing failed but order was successful. Manual intervention may be needed.');
         }
       } else {
         console.log('No referral code provided, skipping referral processing');
@@ -94,9 +95,12 @@ export const useCheckoutWithReferral = () => {
     },
     onSuccess: (order) => {
       console.log('Checkout completed successfully for order:', order.id);
+      // Invalidate all relevant queries to ensure UI updates
       queryClient.invalidateQueries({ queryKey: ['orders'] });
       queryClient.invalidateQueries({ queryKey: ['referral-transactions'] });
       queryClient.invalidateQueries({ queryKey: ['user-referral-code'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-referrer-summary'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-referral-details'] });
     },
     onError: (error) => {
       console.error('Checkout failed:', error);

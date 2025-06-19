@@ -6,11 +6,11 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useUserReferralCode, useCreateReferralCode, useReferralTransactions } from '@/hooks/useReferralCodes';
-import { Copy, Share2, DollarSign, Users, TrendingUp } from 'lucide-react';
+import { Copy, Share2, DollarSign, Users, TrendingUp, RefreshCw } from 'lucide-react';
 
 const ReferralDashboard = () => {
-  const { data: referralCode, isLoading } = useUserReferralCode();
-  const { data: transactions = [] } = useReferralTransactions();
+  const { data: referralCode, isLoading, refetch: refetchCode } = useUserReferralCode();
+  const { data: transactions = [], refetch: refetchTransactions } = useReferralTransactions();
   const createCode = useCreateReferralCode();
   const { toast } = useToast();
 
@@ -56,10 +56,28 @@ const ReferralDashboard = () => {
     }
   };
 
+  const handleRefreshData = () => {
+    console.log('Manual refresh triggered');
+    refetchCode();
+    refetchTransactions();
+    toast({
+      title: 'Data Diperbarui',
+      description: 'Data referral telah dimuat ulang',
+    });
+  };
+
   const totalCommission = transactions.reduce((sum, t) => sum + t.commission_amount, 0);
   const pendingCommission = transactions
     .filter(t => t.status === 'pending')
     .reduce((sum, t) => sum + t.commission_amount, 0);
+
+  console.log('ReferralDashboard render:', {
+    referralCode: referralCode?.code,
+    totalUses: referralCode?.total_uses,
+    transactionsCount: transactions.length,
+    totalCommission,
+    pendingCommission
+  });
 
   if (isLoading) {
     return (
@@ -71,6 +89,24 @@ const ReferralDashboard = () => {
 
   return (
     <div className="space-y-6">
+      {/* Debug Info - Remove in production */}
+      <Card className="bg-yellow-50 border-yellow-200">
+        <CardContent className="p-4">
+          <div className="text-sm space-y-1">
+            <p><strong>Debug Info:</strong></p>
+            <p>Kode Referral: {referralCode?.code || 'Tidak ada'}</p>
+            <p>Total Uses: {referralCode?.total_uses || 0}</p>
+            <p>Total Commission Earned: ¥{referralCode?.total_commission_earned || 0}</p>
+            <p>Transaksi Ditemukan: {transactions.length}</p>
+            <p>Status Loading: {isLoading ? 'Ya' : 'Tidak'}</p>
+            <Button variant="outline" size="sm" onClick={handleRefreshData} className="mt-2">
+              <RefreshCw className="w-4 h-4 mr-1" />
+              Refresh Data
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardContent className="p-6">
