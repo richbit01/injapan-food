@@ -14,21 +14,47 @@ export const useCreateReferralCode = () => {
 
       console.log('Creating referral code for user:', user.id);
 
-      // Generate truly unique referral code using crypto random values
+      // Generate truly unique referral code with better randomization
       const generateUniqueCode = () => {
-        const timestamp = Date.now().toString();
-        const randomBytes = crypto.getRandomValues(new Uint8Array(8));
-        const randomHex = Array.from(randomBytes, byte => byte.toString(16).padStart(2, '0')).join('');
-        const userHash = user.id.replace(/-/g, '').substring(0, 8).toUpperCase();
+        // Use multiple sources of randomness
+        const timestamp = Date.now();
+        const randomBytes1 = crypto.getRandomValues(new Uint8Array(4));
+        const randomBytes2 = crypto.getRandomValues(new Uint8Array(4));
+        const performanceNow = Math.floor(performance.now() * 1000);
         
-        // Create a more complex unique code
-        return `REF${userHash}${timestamp.slice(-6)}${randomHex.substring(0, 6).toUpperCase()}`;
+        // Create unique hash from user ID with different positions
+        const userIdClean = user.id.replace(/-/g, '');
+        const userHash1 = userIdClean.substring(0, 4).toUpperCase();
+        const userHash2 = userIdClean.substring(8, 12).toUpperCase();
+        const userHash3 = userIdClean.substring(16, 20).toUpperCase();
+        
+        // Convert random bytes to hex
+        const randomHex1 = Array.from(randomBytes1, byte => 
+          byte.toString(16).padStart(2, '0')
+        ).join('').toUpperCase();
+        
+        const randomHex2 = Array.from(randomBytes2, byte => 
+          byte.toString(16).padStart(2, '0')
+        ).join('').toUpperCase();
+        
+        // Create multiple variants and pick one randomly
+        const variants = [
+          `REF${userHash1}${timestamp.toString().slice(-4)}${randomHex1}`,
+          `REF${userHash2}${performanceNow.toString().slice(-4)}${randomHex2}`,
+          `REF${userHash3}${randomHex1.substring(0, 4)}${timestamp.toString().slice(-4)}`,
+          `REF${randomHex1.substring(0, 4)}${userHash1}${randomHex2.substring(0, 4)}`,
+          `REF${userHash2}${randomHex2}${timestamp.toString().slice(-6, -2)}`
+        ];
+        
+        // Pick random variant
+        const randomIndex = Math.floor(Math.random() * variants.length);
+        return variants[randomIndex];
       };
 
       // Check for uniqueness with retry mechanism
       let finalCode: string;
       let attempts = 0;
-      const maxAttempts = 10;
+      const maxAttempts = 15; // Increased attempts
 
       while (attempts < maxAttempts) {
         finalCode = generateUniqueCode();
@@ -54,6 +80,9 @@ export const useCreateReferralCode = () => {
 
         console.log(`Code collision detected for: ${finalCode}, generating new one...`);
         attempts++;
+        
+        // Add small delay between attempts to ensure different timestamps
+        await new Promise(resolve => setTimeout(resolve, 10));
       }
 
       if (attempts >= maxAttempts) {
