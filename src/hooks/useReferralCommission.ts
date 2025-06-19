@@ -5,7 +5,13 @@ export const useReferralCommission = () => {
   const { data: commissionRate = 3, isLoading } = useReferralCommissionRate();
 
   const calculateCommission = (totalAmount: number): number => {
-    return totalAmount * (commissionRate / 100);
+    const commission = Math.round(totalAmount * (commissionRate / 100));
+    console.log('💰 Commission calculation:', {
+      totalAmount,
+      commissionRate: `${commissionRate}%`,
+      commission
+    });
+    return commission;
   };
 
   const formatCommission = (totalAmount: number): string => {

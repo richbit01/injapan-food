@@ -34,10 +34,11 @@ export const useCheckoutWithReferral = () => {
 
   return useMutation({
     mutationFn: async (checkoutData: CheckoutData) => {
-      console.log('Processing checkout with referral:', {
-        ...checkoutData,
-        items: checkoutData.items.length + ' items',
-        hasReferralCode: !!checkoutData.referralCode
+      console.log('🛒 Processing checkout with referral:', {
+        totalPrice: checkoutData.totalPrice,
+        referralCode: checkoutData.referralCode,
+        userId: user?.id,
+        itemsCount: checkoutData.items.length
       });
 
       // Create the order first
@@ -54,47 +55,49 @@ export const useCheckoutWithReferral = () => {
         .single();
 
       if (orderError) {
-        console.error('Error creating order:', orderError);
-        throw orderError;
+        console.error('❌ Error creating order:', orderError);
+        throw new Error(`Failed to create order: ${orderError.message}`);
       }
 
-      console.log('Order created successfully:', order.id);
+      console.log('✅ Order created successfully:', order.id);
 
-      // If there's a referral code, create the referral transaction
-      if (checkoutData.referralCode && order) {
+      // Process referral if code provided
+      if (checkoutData.referralCode && checkoutData.referralCode.trim()) {
         try {
+          // Calculate commission
           const commissionAmount = calculateCommission(checkoutData.totalPrice);
           
-          console.log('Processing referral transaction:', {
-            referralCode: checkoutData.referralCode,
+          console.log('💰 Processing referral transaction:', {
+            referralCode: checkoutData.referralCode.trim(),
             orderId: order.id,
             orderTotal: checkoutData.totalPrice,
             commissionAmount,
             referredUserId: user?.id
           });
 
-          const referralResult = await createReferralTransaction.mutateAsync({
-            referralCode: checkoutData.referralCode,
+          // Create referral transaction
+          await createReferralTransaction.mutateAsync({
+            referralCode: checkoutData.referralCode.trim(),
             orderId: order.id,
             orderTotal: checkoutData.totalPrice,
             commissionAmount,
             referredUserId: user?.id
           });
 
-          console.log('Referral transaction processed successfully:', referralResult);
-        } catch (referralError) {
-          console.error('Error processing referral transaction:', referralError);
-          // Log the error but don't fail the order - this is important for user experience
-          console.error('Referral processing failed but order was successful. Manual intervention may be needed.');
+          console.log('✅ Referral transaction processed successfully');
+        } catch (referralError: any) {
+          console.error('❌ Error processing referral transaction:', referralError);
+          // Don't fail the order, just log the referral error
+          console.warn('⚠️ Order successful but referral processing failed:', referralError.message);
         }
       } else {
-        console.log('No referral code provided, skipping referral processing');
+        console.log('ℹ️ No referral code provided, skipping referral processing');
       }
 
       return order;
     },
     onSuccess: (order) => {
-      console.log('Checkout completed successfully for order:', order.id);
+      console.log('🎉 Checkout completed successfully for order:', order.id);
       // Invalidate all relevant queries to ensure UI updates
       queryClient.invalidateQueries({ queryKey: ['orders'] });
       queryClient.invalidateQueries({ queryKey: ['referral-transactions'] });
@@ -103,7 +106,7 @@ export const useCheckoutWithReferral = () => {
       queryClient.invalidateQueries({ queryKey: ['admin-referral-details'] });
     },
     onError: (error) => {
-      console.error('Checkout failed:', error);
+      console.error('💥 Checkout failed:', error);
     }
   });
 };
