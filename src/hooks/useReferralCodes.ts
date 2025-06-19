@@ -1,6 +1,8 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useEffect } from 'react';
 
 interface ReferralCode {
   id: string;
@@ -26,6 +28,33 @@ interface ReferralTransaction {
 
 export const useUserReferralCode = () => {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
+  
+  // Real-time subscription for referral codes
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const channel = supabase
+      .channel('referral-codes-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'referral_codes',
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
+          console.log('Real-time referral code update:', payload);
+          queryClient.invalidateQueries({ queryKey: ['user-referral-code', user.id] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id, queryClient]);
   
   return useQuery({
     queryKey: ['user-referral-code', user?.id],
@@ -127,6 +156,33 @@ export const useCreateReferralCode = () => {
 
 export const useReferralTransactions = () => {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
+  
+  // Real-time subscription for referral transactions
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const channel = supabase
+      .channel('referral-transactions-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'referral_transactions',
+          filter: `referrer_id=eq.${user.id}`
+        },
+        (payload) => {
+          console.log('Real-time referral transaction update:', payload);
+          queryClient.invalidateQueries({ queryKey: ['referral-transactions', user.id] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id, queryClient]);
   
   return useQuery({
     queryKey: ['referral-transactions', user?.id],

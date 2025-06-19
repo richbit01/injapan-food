@@ -1,6 +1,8 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 
 interface ReferrerSummary {
   user_id: string;
@@ -22,6 +24,44 @@ interface ReferralDetail {
 }
 
 export const useAdminReferrerSummary = () => {
+  const queryClient = useQueryClient();
+
+  // Real-time subscription for admin referral data
+  useEffect(() => {
+    const channel = supabase
+      .channel('admin-referral-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'referral_codes'
+        },
+        (payload) => {
+          console.log('Real-time admin referral codes update:', payload);
+          queryClient.invalidateQueries({ queryKey: ['admin-referrer-summary'] });
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'referral_transactions'
+        },
+        (payload) => {
+          console.log('Real-time admin referral transactions update:', payload);
+          queryClient.invalidateQueries({ queryKey: ['admin-referrer-summary'] });
+          queryClient.invalidateQueries({ queryKey: ['admin-referral-details'] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
+
   return useQuery({
     queryKey: ['admin-referrer-summary'],
     queryFn: async (): Promise<ReferrerSummary[]> => {
