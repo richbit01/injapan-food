@@ -17,7 +17,7 @@ const OrderConfirmation = ({ order }: OrderConfirmationProps) => {
 
   const handleConfirm = async () => {
     try {
-      await confirmOrder.mutateAsync({
+      await confirmOrder({
         orderId: order.id,
         referralTransactionId: order.referralTransaction?.id
       });
@@ -38,7 +38,7 @@ const OrderConfirmation = ({ order }: OrderConfirmationProps) => {
 
   const handleCancel = async () => {
     try {
-      await cancelOrder.mutateAsync({
+      await cancelOrder({
         orderId: order.id,
         referralTransactionId: order.referralTransaction?.id
       });

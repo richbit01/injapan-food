@@ -1,135 +1,119 @@
-import { useState } from 'react';
+
 import { Link, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   Package, 
   ShoppingCart, 
   Users, 
-  Settings,
+  Settings, 
+  Gift,
+  CheckCircle,
+  History,
   Trash2,
   FileText,
   BarChart3,
-  Upload,
-  Download,
-  Percent,
-  UserCog
+  Upload
 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 const AdminSidebar = () => {
   const location = useLocation();
-  const [collapsed, setCollapsed] = useState(false);
 
   const menuItems = [
     {
       title: 'Dashboard',
+      href: '/admin',
       icon: LayoutDashboard,
-      path: '/admin',
-      exact: true
     },
     {
-      title: 'Kelola Produk',
+      title: 'Konfirmasi Pesanan',
+      href: '/admin/order-confirmation',
+      icon: CheckCircle,
+      description: 'Pending orders'
+    },
+    {
+      title: 'Produk',
+      href: '/admin/products',
       icon: Package,
-      path: '/admin/products'
+    },
+    {
+      title: 'Tambah Produk',
+      href: '/admin/add-product',
+      icon: Package,
     },
     {
       title: 'Riwayat Pesanan',
+      href: '/admin/orders-history',
       icon: ShoppingCart,
-      path: '/admin/orders'
     },
     {
-      title: 'Kelola Pengguna',
-      icon: UserCog,
-      path: '/admin/users'
-    },
-    {
-      title: 'Panel Referral',
-      icon: Users,
-      path: '/admin/referral-panel'
+      title: 'Referral Panel',
+      href: '/admin/referral',
+      icon: Gift,
     },
     {
       title: 'Pengaturan Referral',
-      icon: Percent,
-      path: '/admin/referral-settings'
+      href: '/admin/referral-settings',
+      icon: Settings,
+    },
+    {
+      title: 'Manajemen User',
+      href: '/admin/users',
+      icon: Users,
+    },
+    {
+      title: 'Log Admin',
+      href: '/admin/logs',
+      icon: FileText,
     },
     {
       title: 'Import/Export',
+      href: '/admin/import-export',
       icon: Upload,
-      path: '/admin/import-export'
     },
     {
       title: 'Recycle Bin',
+      href: '/admin/recycle-bin',
       icon: Trash2,
-      path: '/admin/recycle-bin'
     },
-    {
-      title: 'Log Aktivitas',
-      icon: FileText,
-      path: '/admin/logs'
-    },
-    {
-      title: 'Statistik',
-      icon: BarChart3,
-      path: '/admin/analytics'
-    }
   ];
 
-  const isActive = (path: string, exact = false) => {
-    if (exact) {
-      return location.pathname === path;
-    }
-    return location.pathname.startsWith(path);
-  };
-
   return (
-    <div className={`bg-white shadow-lg transition-all duration-300 ${
-      collapsed ? 'w-20' : 'w-64'
-    }`}>
-      <div className="p-4 border-b">
-        <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 rounded-lg overflow-hidden">
-            <img 
-              src="/lovable-uploads/022a8dd4-6c9e-4b02-82a8-703a2cbfb51a.png" 
-              alt="Injapan Food Logo" 
-              className="w-full h-full object-cover"
-            />
-          </div>
-          {!collapsed && (
-            <div>
-              <h2 className="font-bold text-gray-900">Injapan Food</h2>
-              <p className="text-xs text-gray-600">Admin Panel</p>
-            </div>
-          )}
-        </div>
-        <button
-          onClick={() => setCollapsed(!collapsed)}
-          className="mt-4 w-full flex justify-center p-2 text-gray-600 hover:bg-gray-100 rounded"
-        >
-          {collapsed ? '→' : '←'}
-        </button>
+    <div className="w-64 bg-white shadow-lg h-screen overflow-y-auto">
+      <div className="p-6 border-b">
+        <h1 className="text-xl font-bold text-gray-900">Admin Panel</h1>
+        <p className="text-sm text-gray-600">Injapan Food</p>
       </div>
-
+      
       <nav className="p-4">
-        <div className="space-y-2">
+        <ul className="space-y-2">
           {menuItems.map((item) => {
+            const isActive = location.pathname === item.href;
             const Icon = item.icon;
-            const active = isActive(item.path, item.exact);
             
             return (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`flex items-center space-x-3 p-3 rounded-lg transition-colors ${
-                  active 
-                    ? 'bg-red-100 text-red-700 border-r-2 border-red-600' 
-                    : 'text-gray-600 hover:bg-gray-100'
-                }`}
-              >
-                <Icon className="w-5 h-5" />
-                {!collapsed && <span className="font-medium">{item.title}</span>}
-              </Link>
+              <li key={item.href}>
+                <Link
+                  to={item.href}
+                  className={cn(
+                    "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                    isActive
+                      ? "bg-red-50 text-red-700 border-r-2 border-red-700"
+                      : "text-gray-700 hover:bg-gray-100"
+                  )}
+                >
+                  <Icon className="w-5 h-5" />
+                  <span>{item.title}</span>
+                  {item.description && (
+                    <span className="text-xs text-gray-500 ml-auto">
+                      {item.description}
+                    </span>
+                  )}
+                </Link>
+              </li>
             );
           })}
-        </div>
+        </ul>
       </nav>
     </div>
   );

@@ -1,3 +1,4 @@
+
 export interface Product {
   id: string;
   name: string;
@@ -55,6 +56,42 @@ export interface Order {
       user_id: string;
     };
   };
+}
+
+export interface OrderItem {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+  image_url?: string;
+}
+
+export interface OrderTracking {
+  id: string;
+  customer_name: string;
+  customer_phone?: string;
+  customer_email?: string;
+  items: OrderItem[];
+  total_amount: number;
+  status: 'pending' | 'processing' | 'completed' | 'cancelled';
+  created_at: string;
+  updated_at: string;
+  notes?: string;
+}
+
+export interface Prefecture {
+  name: string;
+  name_en: string;
+  code: string;
+}
+
+export interface DashboardStats {
+  totalProducts: number;
+  lowStockProducts: number;
+  totalCategories: number;
+  totalOrders: number;
+  pendingOrders: number;
+  totalRevenue: number;
 }
 
 export interface AdminLog {
