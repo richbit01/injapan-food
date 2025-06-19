@@ -13,6 +13,44 @@ WHERE status = 'pending';
 CREATE INDEX IF NOT EXISTS idx_referral_transactions_status ON public.referral_transactions(status);
 CREATE INDEX IF NOT EXISTS idx_orders_status ON public.orders(status);
 
+-- Fix the is_admin function to properly check admin role
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS boolean
+LANGUAGE sql
+SECURITY DEFINER
+STABLE
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.profiles 
+    WHERE id = auth.uid() AND role = 'admin'
+  );
+$$;
+
+-- Drop existing product policies
+DROP POLICY IF EXISTS "Anyone can view products" ON public.products;
+DROP POLICY IF EXISTS "Admins can manage products" ON public.products;
+
+-- Create new policies for products table
+CREATE POLICY "Anyone can view products" 
+  ON public.products 
+  FOR SELECT 
+  USING (true);
+
+CREATE POLICY "Admins can insert products" 
+  ON public.products 
+  FOR INSERT 
+  WITH CHECK (public.is_admin());
+
+CREATE POLICY "Admins can update products" 
+  ON public.products 
+  FOR UPDATE 
+  USING (public.is_admin());
+
+CREATE POLICY "Admins can delete products" 
+  ON public.products 
+  FOR DELETE 
+  USING (public.is_admin());
+
 -- Add a function to confirm referral transaction and update stats
 CREATE OR REPLACE FUNCTION public.confirm_referral_transaction(
   transaction_id UUID,
