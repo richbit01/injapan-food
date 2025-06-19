@@ -4,12 +4,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { useUserReferralCode, useCreateReferralCode, useReferralTransactions } from '@/hooks/useReferralCodes';
-import { Copy, Share2, DollarSign, Users, TrendingUp, RefreshCw } from 'lucide-react';
+import { Copy, Share2, DollarSign, Users, TrendingUp, RefreshCw, AlertCircle } from 'lucide-react';
 
 const ReferralDashboard = () => {
-  const { data: referralCode, isLoading, refetch: refetchCode } = useUserReferralCode();
+  const { data: referralCode, isLoading, refetch: refetchCode, error: fetchError } = useUserReferralCode();
   const { data: transactions = [], refetch: refetchTransactions } = useReferralTransactions();
   const createCode = useCreateReferralCode();
   const { toast } = useToast();
@@ -26,10 +27,11 @@ const ReferralDashboard = () => {
         title: 'Berhasil!',
         description: 'Kode referral telah dibuat',
       });
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Create referral code error:', error);
       toast({
         title: 'Error',
-        description: 'Gagal membuat kode referral',
+        description: error.message || 'Gagal membuat kode referral',
         variant: 'destructive',
       });
     }
@@ -76,7 +78,9 @@ const ReferralDashboard = () => {
     totalUses: referralCode?.total_uses,
     transactionsCount: transactions.length,
     totalCommission,
-    pendingCommission
+    pendingCommission,
+    isLoading,
+    error: fetchError
   });
 
   if (isLoading) {
@@ -89,6 +93,16 @@ const ReferralDashboard = () => {
 
   return (
     <div className="space-y-6">
+      {/* Error Alert */}
+      {fetchError && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Gagal memuat data referral. Silakan refresh halaman atau coba lagi nanti.
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Debug Info - Remove in production */}
       <Card className="bg-yellow-50 border-yellow-200">
         <CardContent className="p-4">
@@ -99,6 +113,7 @@ const ReferralDashboard = () => {
             <p>Total Commission Earned: ¥{referralCode?.total_commission_earned || 0}</p>
             <p>Transaksi Ditemukan: {transactions.length}</p>
             <p>Status Loading: {isLoading ? 'Ya' : 'Tidak'}</p>
+            <p>Create Code Loading: {createCode.isPending ? 'Ya' : 'Tidak'}</p>
             <Button variant="outline" size="sm" onClick={handleRefreshData} className="mt-2">
               <RefreshCw className="w-4 h-4 mr-1" />
               Refresh Data
@@ -153,9 +168,28 @@ const ReferralDashboard = () => {
           {!referralCode ? (
             <div className="text-center py-8">
               <p className="text-gray-600 mb-4">Anda belum memiliki kode referral</p>
-              <Button onClick={handleCreateCode} disabled={createCode.isPending}>
-                {createCode.isPending ? 'Membuat...' : 'Buat Kode Referral'}
+              <Button 
+                onClick={handleCreateCode} 
+                disabled={createCode.isPending}
+                className="min-w-[120px]"
+              >
+                {createCode.isPending ? (
+                  <div className="flex items-center space-x-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    <span>Membuat...</span>
+                  </div>
+                ) : (
+                  'Buat Kode Referral'
+                )}
               </Button>
+              {createCode.error && (
+                <Alert variant="destructive" className="mt-4">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    {createCode.error.message || 'Gagal membuat kode referral'}
+                  </AlertDescription>
+                </Alert>
+              )}
             </div>
           ) : (
             <div className="space-y-4">

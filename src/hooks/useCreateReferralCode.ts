@@ -14,50 +14,33 @@ export const useCreateReferralCode = () => {
 
       console.log('Creating referral code for user:', user.id);
 
-      // Generate truly unique referral code with better randomization
-      const generateUniqueCode = () => {
-        // Use multiple sources of randomness
-        const timestamp = Date.now();
-        const randomBytes1 = crypto.getRandomValues(new Uint8Array(4));
-        const randomBytes2 = crypto.getRandomValues(new Uint8Array(4));
-        const performanceNow = Math.floor(performance.now() * 1000);
+      // Simple but effective code generation
+      const generateSimpleCode = () => {
+        // Use first 8 chars of user ID (without dashes) + timestamp
+        const userHash = user.id.replace(/-/g, '').substring(0, 8).toUpperCase();
+        const timestamp = Date.now().toString().slice(-6); // Last 6 digits
+        const randomNum = Math.floor(Math.random() * 999).toString().padStart(3, '0');
         
-        // Create unique hash from user ID with different positions
-        const userIdClean = user.id.replace(/-/g, '');
-        const userHash1 = userIdClean.substring(0, 4).toUpperCase();
-        const userHash2 = userIdClean.substring(8, 12).toUpperCase();
-        const userHash3 = userIdClean.substring(16, 20).toUpperCase();
-        
-        // Convert random bytes to hex
-        const randomHex1 = Array.from(randomBytes1, byte => 
-          byte.toString(16).padStart(2, '0')
-        ).join('').toUpperCase();
-        
-        const randomHex2 = Array.from(randomBytes2, byte => 
-          byte.toString(16).padStart(2, '0')
-        ).join('').toUpperCase();
-        
-        // Create multiple variants and pick one randomly
-        const variants = [
-          `REF${userHash1}${timestamp.toString().slice(-4)}${randomHex1}`,
-          `REF${userHash2}${performanceNow.toString().slice(-4)}${randomHex2}`,
-          `REF${userHash3}${randomHex1.substring(0, 4)}${timestamp.toString().slice(-4)}`,
-          `REF${randomHex1.substring(0, 4)}${userHash1}${randomHex2.substring(0, 4)}`,
-          `REF${userHash2}${randomHex2}${timestamp.toString().slice(-6, -2)}`
-        ];
-        
-        // Pick random variant
-        const randomIndex = Math.floor(Math.random() * variants.length);
-        return variants[randomIndex];
+        return `REF${userHash}${timestamp}${randomNum}`;
       };
 
-      // Check for uniqueness with retry mechanism
-      let finalCode: string;
+      // Alternative generation method if first fails
+      const generateAlternativeCode = () => {
+        // Use middle part of user ID + different timestamp format
+        const userIdClean = user.id.replace(/-/g, '');
+        const userHash = userIdClean.substring(8, 16).toUpperCase();
+        const timestamp = Date.now().toString(36).toUpperCase(); // Base36 encoding
+        const randomHex = Math.floor(Math.random() * 0xFFFF).toString(16).toUpperCase().padStart(4, '0');
+        
+        return `REF${userHash}${timestamp}${randomHex}`.substring(0, 20); // Limit length
+      };
+
+      // Try simple generation first
+      let finalCode = generateSimpleCode();
       let attempts = 0;
-      const maxAttempts = 15; // Increased attempts
+      const maxAttempts = 5;
 
       while (attempts < maxAttempts) {
-        finalCode = generateUniqueCode();
         console.log(`Attempting to create code: ${finalCode} (attempt ${attempts + 1})`);
 
         // Check if code already exists
@@ -69,7 +52,7 @@ export const useCreateReferralCode = () => {
 
         if (checkError) {
           console.error('Error checking code uniqueness:', checkError);
-          throw checkError;
+          throw new Error('Failed to verify code uniqueness');
         }
 
         if (!existingCode) {
@@ -81,21 +64,33 @@ export const useCreateReferralCode = () => {
         console.log(`Code collision detected for: ${finalCode}, generating new one...`);
         attempts++;
         
-        // Add small delay between attempts to ensure different timestamps
-        await new Promise(resolve => setTimeout(resolve, 10));
+        // Use alternative generation method for subsequent attempts
+        if (attempts <= 2) {
+          finalCode = generateSimpleCode();
+        } else {
+          finalCode = generateAlternativeCode();
+        }
+        
+        // Small delay between attempts
+        await new Promise(resolve => setTimeout(resolve, 100));
       }
 
       if (attempts >= maxAttempts) {
-        throw new Error('Unable to generate unique referral code after multiple attempts');
+        // Final fallback: use user ID hash + current timestamp
+        const userHash = user.id.replace(/-/g, '').substring(0, 12).toUpperCase();
+        const uniqueTimestamp = Date.now().toString();
+        finalCode = `REF${userHash}${uniqueTimestamp}`.substring(0, 25);
+        
+        console.log('Using fallback code generation:', finalCode);
       }
 
-      console.log('Creating referral code with final code:', finalCode!);
+      console.log('Creating referral code with final code:', finalCode);
 
       const { data, error } = await supabase
         .from('referral_codes')
         .insert({
           user_id: user.id,
-          code: finalCode!,
+          code: finalCode,
           is_active: true,
           total_uses: 0,
           total_commission_earned: 0
@@ -105,7 +100,13 @@ export const useCreateReferralCode = () => {
 
       if (error) {
         console.error('Error creating referral code:', error);
-        throw error;
+        
+        // Handle duplicate key error specifically
+        if (error.code === '23505') {
+          throw new Error('Terjadi konflik kode referral. Silakan coba lagi.');
+        }
+        
+        throw new Error('Gagal membuat kode referral: ' + error.message);
       }
 
       console.log('Referral code created successfully:', data);
@@ -114,5 +115,8 @@ export const useCreateReferralCode = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user-referral-code'] });
     },
+    onError: (error) => {
+      console.error('Referral code creation failed:', error);
+    }
   });
 };
