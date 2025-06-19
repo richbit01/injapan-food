@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -64,18 +63,47 @@ export const useCreateReferralCode = () => {
 
       console.log('Creating referral code for user:', user.id);
 
-      // Generate unique referral code with better uniqueness
-      const timestamp = Date.now().toString();
-      const userIdShort = user.id.slice(0, 8).toUpperCase();
-      const code = `REF${userIdShort}${timestamp.slice(-4)}`;
+      // Generate truly unique referral code
+      const timestamp = Date.now();
+      const randomStr = Math.random().toString(36).substring(2, 8).toUpperCase();
+      const userIdHash = user.id.replace(/-/g, '').substring(0, 6).toUpperCase();
+      const code = `REF${userIdHash}${randomStr}`;
 
       console.log('Generated referral code:', code);
+
+      // Check if code already exists and regenerate if needed
+      let finalCode = code;
+      let attempts = 0;
+      const maxAttempts = 5;
+
+      while (attempts < maxAttempts) {
+        const { data: existingCode } = await supabase
+          .from('referral_codes')
+          .select('code')
+          .eq('code', finalCode)
+          .single();
+
+        if (!existingCode) {
+          // Code is unique, break the loop
+          break;
+        }
+
+        // Generate new code if collision detected
+        const newRandomStr = Math.random().toString(36).substring(2, 8).toUpperCase();
+        finalCode = `REF${userIdHash}${newRandomStr}`;
+        attempts++;
+        console.log(`Code collision detected, trying new code: ${finalCode}`);
+      }
+
+      if (attempts >= maxAttempts) {
+        throw new Error('Unable to generate unique referral code');
+      }
 
       const { data, error } = await supabase
         .from('referral_codes')
         .insert({
           user_id: user.id,
-          code: code,
+          code: finalCode,
           is_active: true,
           total_uses: 0,
           total_commission_earned: 0
