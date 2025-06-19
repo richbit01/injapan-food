@@ -14,56 +14,59 @@ export const useCreateReferralCode = () => {
 
       console.log('Creating referral code for user:', user.id);
 
-      // Generate truly unique referral code using multiple random elements
-      const timestamp = Date.now().toString().slice(-6); // Last 6 digits of timestamp
-      const randomStr1 = Math.random().toString(36).substring(2, 6).toUpperCase(); // 4 chars
-      const randomStr2 = Math.random().toString(36).substring(2, 4).toUpperCase(); // 2 chars
-      const userIdPart = user.id.replace(/-/g, '').substring(0, 4).toUpperCase(); // First 4 chars of user ID
-      
-      // Create a more complex and unique code
-      const baseCode = `REF${userIdPart}${randomStr1}${timestamp}${randomStr2}`;
-      
-      console.log('Generated base referral code:', baseCode);
+      // Generate truly unique referral code using crypto random values
+      const generateUniqueCode = () => {
+        const timestamp = Date.now().toString();
+        const randomBytes = crypto.getRandomValues(new Uint8Array(8));
+        const randomHex = Array.from(randomBytes, byte => byte.toString(16).padStart(2, '0')).join('');
+        const userHash = user.id.replace(/-/g, '').substring(0, 8).toUpperCase();
+        
+        // Create a more complex unique code
+        return `REF${userHash}${timestamp.slice(-6)}${randomHex.substring(0, 6).toUpperCase()}`;
+      };
 
-      // Check if code already exists and regenerate if needed
-      let finalCode = baseCode;
+      // Check for uniqueness with retry mechanism
+      let finalCode: string;
       let attempts = 0;
       const maxAttempts = 10;
 
       while (attempts < maxAttempts) {
-        const { data: existingCode } = await supabase
+        finalCode = generateUniqueCode();
+        console.log(`Attempting to create code: ${finalCode} (attempt ${attempts + 1})`);
+
+        // Check if code already exists
+        const { data: existingCode, error: checkError } = await supabase
           .from('referral_codes')
           .select('code')
           .eq('code', finalCode)
-          .single();
+          .maybeSingle();
+
+        if (checkError) {
+          console.error('Error checking code uniqueness:', checkError);
+          throw checkError;
+        }
 
         if (!existingCode) {
           // Code is unique, break the loop
+          console.log(`Unique code found: ${finalCode}`);
           break;
         }
 
-        // Generate completely new code if collision detected
-        const newTimestamp = Date.now().toString().slice(-6);
-        const newRandomStr1 = Math.random().toString(36).substring(2, 6).toUpperCase();
-        const newRandomStr2 = Math.random().toString(36).substring(2, 4).toUpperCase();
-        const newUserIdPart = user.id.replace(/-/g, '').substring(Math.floor(Math.random() * 10), 4).toUpperCase();
-        
-        finalCode = `REF${newUserIdPart}${newRandomStr1}${newTimestamp}${newRandomStr2}`;
+        console.log(`Code collision detected for: ${finalCode}, generating new one...`);
         attempts++;
-        console.log(`Code collision detected, trying new code: ${finalCode} (attempt ${attempts})`);
       }
 
       if (attempts >= maxAttempts) {
         throw new Error('Unable to generate unique referral code after multiple attempts');
       }
 
-      console.log('Final unique referral code:', finalCode);
+      console.log('Creating referral code with final code:', finalCode!);
 
       const { data, error } = await supabase
         .from('referral_codes')
         .insert({
           user_id: user.id,
-          code: finalCode,
+          code: finalCode!,
           is_active: true,
           total_uses: 0,
           total_commission_earned: 0
