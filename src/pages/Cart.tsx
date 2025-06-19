@@ -13,7 +13,8 @@ import ReferralCodeInput from '@/components/ReferralCodeInput';
 const Cart = () => {
   const { cart, updateQuantity, removeFromCart, total, clearCart } = useCart();
   const [showCheckout, setShowCheckout] = useState(false);
-  const [referralCode, setReferralCode] = useState<string | null>(null);
+  const [referralCode, setReferralCode] = useState('');
+  const [isReferralValid, setIsReferralValid] = useState(false);
   const [customerInfo, setCustomerInfo] = useState({
     name: '',
     prefecture: '',
@@ -31,10 +32,22 @@ const Cart = () => {
     }
   };
 
+  const handleReferralValidation = (isValid: boolean, code?: string) => {
+    setIsReferralValid(isValid);
+    if (isValid && code) {
+      setReferralCode(code);
+      console.log('✅ Referral code set for checkout:', code);
+    } else {
+      setReferralCode('');
+      console.log('❌ Referral code cleared');
+    }
+  };
+
   const handleCheckoutSuccess = () => {
     clearCart();
     setShowCheckout(false);
-    setReferralCode(null);
+    setReferralCode('');
+    setIsReferralValid(false);
     setCustomerInfo({
       name: '',
       prefecture: '',
@@ -209,8 +222,9 @@ const Cart = () => {
 
                   {/* Referral Code Input */}
                   <ReferralCodeInput
-                    onReferralCodeChange={setReferralCode}
-                    initialCode=""
+                    value={referralCode}
+                    onChange={setReferralCode}
+                    onValidation={handleReferralValidation}
                   />
                   
                   <textarea
@@ -226,7 +240,7 @@ const Cart = () => {
                       cart={cart}
                       total={total}
                       customerInfo={customerInfo}
-                      referralCode={referralCode}
+                      referralCode={isReferralValid ? referralCode : undefined}
                       onSuccess={handleCheckoutSuccess}
                     />
                   ) : (
