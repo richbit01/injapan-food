@@ -3,7 +3,7 @@ import { useUserReferralCode, useReferralTransactions } from '@/hooks/useReferra
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Gift, Users, Yen, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { Gift, Users, DollarSign, Clock, CheckCircle, XCircle } from 'lucide-react';
 
 const ReferralDashboard = () => {
   const { data: referralCode, isLoading: codeLoading } = useUserReferralCode();

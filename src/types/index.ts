@@ -82,12 +82,15 @@ export interface OrderTracking {
 export interface Prefecture {
   name: string;
   name_en: string;
-  code: string;
+  code?: string; // Make code optional since it's not always used
 }
 
 export interface DashboardStats {
   totalProducts: number;
+  activeProducts?: number;
   lowStockProducts: any[];
+  outOfStockProducts?: any[];
+  criticalStockProducts?: any[];
   totalCategories: number;
   totalOrders: number;
   pendingOrders: number;
