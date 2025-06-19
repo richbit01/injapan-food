@@ -1,22 +1,26 @@
 
 export interface ReferralCode {
   id: string;
-  user_id: string;
   code: string;
-  created_at: string;
-  is_active: boolean;
+  user_id: string;
+  discount_percentage: number;
+  max_uses: number;
   total_uses: number;
   total_commission_earned: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface ReferralTransaction {
   id: string;
-  referrer_id: string;
-  referred_user_id?: string;
   referral_code: string;
+  referrer_id: string;
   order_id: string;
   commission_amount: number;
-  order_total: number;
-  status: 'pending' | 'paid' | 'cancelled';
+  status: 'pending' | 'confirmed' | 'cancelled';
   created_at: string;
+  updated_at: string;
+  confirmed_at?: string;
+  confirmed_by?: string;
 }

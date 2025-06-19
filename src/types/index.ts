@@ -87,7 +87,7 @@ export interface Prefecture {
 
 export interface DashboardStats {
   totalProducts: number;
-  lowStockProducts: number;
+  lowStockProducts: any[];
   totalCategories: number;
   totalOrders: number;
   pendingOrders: number;
