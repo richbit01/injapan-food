@@ -10,7 +10,10 @@ export const sampleProducts: Product[] = [
     category: 'Makanan Ringan',
     image_url: 'https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=400&h=300&fit=crop&crop=center',
     stock: 25,
-    status: 'active'
+    status: 'active',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    variants: []
   },
   {
     id: '2',
@@ -21,6 +24,8 @@ export const sampleProducts: Product[] = [
     image_url: 'https://images.unsplash.com/photo-1498936178812-4b2e558d2937?w=400&h=300&fit=crop&crop=center',
     stock: 15,
     status: 'active',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
     variants: [
       { id: 'v1', name: 'Level 10', price: 320, stock: 20 },
       { id: 'v2', name: 'Level 30', price: 350, stock: 15 },
@@ -35,7 +40,10 @@ export const sampleProducts: Product[] = [
     category: 'Bumbu Dapur',
     image_url: 'https://images.unsplash.com/photo-1582562124811-c09040d0a901?w=400&h=300&fit=crop&crop=center',
     stock: 8,
-    status: 'active'
+    status: 'active',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    variants: []
   },
   {
     id: '4',
@@ -45,7 +53,10 @@ export const sampleProducts: Product[] = [
     category: 'Makanan Siap Saji',
     image_url: 'https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=400&h=300&fit=crop&crop=center',
     stock: 12,
-    status: 'active'
+    status: 'active',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    variants: []
   },
   {
     id: '5',
@@ -55,7 +66,10 @@ export const sampleProducts: Product[] = [
     category: 'Makanan Siap Saji',
     image_url: 'https://images.unsplash.com/photo-1498936178812-4b2e558d2937?w=400&h=300&fit=crop&crop=center',
     stock: 0,
-    status: 'out_of_stock'
+    status: 'out_of_stock',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    variants: []
   },
   {
     id: '6',
@@ -65,7 +79,10 @@ export const sampleProducts: Product[] = [
     category: 'Makanan Ringan',
     image_url: 'https://images.unsplash.com/photo-1582562124811-c09040d0a901?w=400&h=300&fit=crop&crop=center',
     stock: 18,
-    status: 'active'
+    status: 'active',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    variants: []
   },
   {
     id: '7',
@@ -75,7 +92,10 @@ export const sampleProducts: Product[] = [
     category: 'Bahan Masak Beku',
     image_url: 'https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=400&h=300&fit=crop&crop=center',
     stock: 3,
-    status: 'active'
+    status: 'active',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    variants: []
   },
   {
     id: '8',
@@ -85,7 +105,10 @@ export const sampleProducts: Product[] = [
     category: 'Bahan Masak Beku',
     image_url: 'https://images.unsplash.com/photo-1498936178812-4b2e558d2937?w=400&h=300&fit=crop&crop=center',
     stock: 7,
-    status: 'active'
+    status: 'active',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    variants: []
   },
   {
     id: '9',
@@ -95,7 +118,10 @@ export const sampleProducts: Product[] = [
     category: 'Sayur Segar/Beku',
     image_url: 'https://images.unsplash.com/photo-1582562124811-c09040d0a901?w=400&h=300&fit=crop&crop=center',
     stock: 22,
-    status: 'active'
+    status: 'active',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    variants: []
   },
   {
     id: '10',
@@ -105,7 +131,10 @@ export const sampleProducts: Product[] = [
     category: 'Sayur Beku',
     image_url: 'https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=400&h=300&fit=crop&crop=center',
     stock: 4,
-    status: 'active'
+    status: 'active',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    variants: []
   },
   {
     id: '11',
@@ -115,7 +144,10 @@ export const sampleProducts: Product[] = [
     category: 'Sayur Segar/Beku',
     image_url: 'https://images.unsplash.com/photo-1498936178812-4b2e558d2937?w=400&h=300&fit=crop&crop=center',
     stock: 14,
-    status: 'inactive'
+    status: 'inactive',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    variants: []
   },
 ];
 

@@ -1,6 +1,6 @@
 
 import { LogOut, User, ShoppingBag, Settings, Percent } from 'lucide-react';
-import { useFirebaseAuth } from '@/hooks/useFirebaseAuth';
+import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -15,20 +15,20 @@ import {
 import { Button } from '@/components/ui/button';
 
 const UserMenu = () => {
-  const { user, signOut } = useFirebaseAuth();
+  const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     const checkAdminStatus = async () => {
       if (user) {
-        console.log('UserMenu: Checking admin status for Firebase user:', user.uid);
+        console.log('UserMenu: Checking admin status for user:', user.id);
         
-        // Check admin status using firebase_uid - use maybeSingle to avoid errors
+        // Check admin status using user id
         const { data, error } = await supabase
           .from('profiles')
           .select('role')
-          .eq('firebase_uid', user.uid)
+          .eq('id', user.id)
           .maybeSingle();
         
         if (error) {
@@ -78,7 +78,7 @@ const UserMenu = () => {
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuLabel>
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium">{user.displayName || 'User'}</p>
+            <p className="text-sm font-medium">User</p>
             <p className="text-xs text-muted-foreground">{user.email}</p>
           </div>
         </DropdownMenuLabel>

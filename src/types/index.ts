@@ -63,7 +63,7 @@ export interface OrderItem {
   name: string;
   price: number;
   quantity: number;
-  image_url?: string;
+  image_url: string;
 }
 
 export interface OrderTracking {
@@ -82,15 +82,15 @@ export interface OrderTracking {
 export interface Prefecture {
   name: string;
   name_en: string;
-  code?: string; // Make code optional since it's not always used
+  code?: string;
 }
 
 export interface DashboardStats {
   totalProducts: number;
   activeProducts?: number;
-  lowStockProducts: any[];
-  outOfStockProducts?: any[];
-  criticalStockProducts?: any[];
+  lowStockProducts: Product[];
+  outOfStockProducts?: Product[];
+  criticalStockProducts?: Product[];
   totalCategories: number;
   totalOrders: number;
   pendingOrders: number;
