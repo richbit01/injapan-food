@@ -34,15 +34,15 @@ export const useCheckoutWithReferral = () => {
 
   return useMutation({
     mutationFn: async (checkoutData: CheckoutData) => {
-      console.log('🛒 Starting checkout process with detailed logging:', {
+      console.log('🛒 [REALTIME] Starting checkout process:', {
         totalPrice: checkoutData.totalPrice,
         referralCode: checkoutData.referralCode,
         userId: user?.id,
         itemsCount: checkoutData.items.length,
-        customerInfo: checkoutData.customerInfo
+        timestamp: new Date().toISOString()
       });
 
-      // Create the order first
+      // Step 1: Create order immediately in database
       const orderData = {
         user_id: user?.id || null,
         items: checkoutData.items,
@@ -51,8 +51,7 @@ export const useCheckoutWithReferral = () => {
         status: 'pending'
       };
 
-      console.log('📝 Creating order with data:', orderData);
-
+      console.log('📝 [REALTIME] Creating order in database...');
       const { data: order, error: orderError } = await supabase
         .from('orders')
         .insert(orderData)
@@ -60,24 +59,23 @@ export const useCheckoutWithReferral = () => {
         .single();
 
       if (orderError) {
-        console.error('❌ Error creating order:', orderError);
+        console.error('❌ [REALTIME] Order creation failed:', orderError);
         throw new Error(`Failed to create order: ${orderError.message}`);
       }
 
-      console.log('✅ Order created successfully:', {
+      console.log('✅ [REALTIME] Order saved to database:', {
         orderId: order.id,
-        orderData: order
+        timestamp: new Date().toISOString()
       });
 
-      // Process referral if code provided
+      // Step 2: Process referral immediately if code provided
       if (checkoutData.referralCode && checkoutData.referralCode.trim()) {
         const cleanCode = checkoutData.referralCode.trim().toUpperCase();
         
         try {
-          console.log('🔍 Processing referral code with detailed steps:', cleanCode);
+          console.log('💰 [REALTIME] Processing referral commission for code:', cleanCode);
           
-          // First validate the referral code exists and is active
-          console.log('🔍 Step 1: Validating referral code in database...');
+          // Validate referral code first
           const { data: referralCodeData, error: validationError } = await supabase
             .from('referral_codes')
             .select('*')
@@ -86,49 +84,31 @@ export const useCheckoutWithReferral = () => {
             .single();
 
           if (validationError || !referralCodeData) {
-            console.warn('⚠️ Invalid referral code:', {
+            console.warn('⚠️ [REALTIME] Invalid referral code, skipping commission:', {
               code: cleanCode,
-              error: validationError,
-              data: referralCodeData
+              error: validationError
             });
-            // Don't throw error, just log warning - order should still proceed
             return order;
           }
-
-          console.log('✅ Step 2: Valid referral code found:', {
-            code: referralCodeData.code,
-            ownerId: referralCodeData.user_id,
-            currentUses: referralCodeData.total_uses,
-            currentCommission: referralCodeData.total_commission_earned
-          });
 
           // Prevent self-referral
           if (user?.id && referralCodeData.user_id === user.id) {
-            console.warn('⚠️ Step 3: Self-referral attempt detected, skipping referral processing');
+            console.warn('⚠️ [REALTIME] Self-referral detected, skipping commission');
             return order;
           }
 
-          console.log('✅ Step 3: Self-referral check passed');
-
-          // Calculate commission
+          // Calculate commission based on current settings
           const commissionAmount = calculateCommission(checkoutData.totalPrice);
           
-          console.log('💰 Step 4: Commission calculation:', {
-            orderTotal: checkoutData.totalPrice,
-            commissionAmount,
-            commissionRate: '3%'
-          });
-
-          console.log('📝 Step 5: Creating referral transaction with data:', {
-            referralCode: cleanCode,
-            orderId: order.id,
+          console.log('💰 [REALTIME] Commission calculated:', {
             orderTotal: checkoutData.totalPrice,
             commissionAmount,
             referrerUserId: referralCodeData.user_id,
             referredUserId: user?.id || 'guest'
           });
 
-          // Create referral transaction using the mutation
+          // Create referral transaction immediately
+          console.log('📝 [REALTIME] Saving referral transaction to database...');
           const transactionResult = await createReferralTransaction.mutateAsync({
             referralCode: cleanCode,
             orderId: order.id,
@@ -137,47 +117,59 @@ export const useCheckoutWithReferral = () => {
             referredUserId: user?.id
           });
 
-          console.log('✅ Step 6: Referral transaction created successfully:', {
+          console.log('✅ [REALTIME] Referral transaction saved:', {
             transactionId: transactionResult.id,
-            transactionData: transactionResult
+            timestamp: new Date().toISOString()
           });
 
-          // Force refresh of referral data
-          console.log('🔄 Step 7: Invalidating queries to refresh UI...');
+          // Force immediate UI refresh
           queryClient.invalidateQueries({ queryKey: ['referral-transactions'] });
           queryClient.invalidateQueries({ queryKey: ['user-referral-code'] });
           queryClient.invalidateQueries({ queryKey: ['admin-referrer-summary'] });
           queryClient.invalidateQueries({ queryKey: ['admin-referral-details'] });
 
-          console.log('🎉 Referral processing completed successfully!');
+          console.log('🔄 [REALTIME] All queries invalidated for immediate UI update');
 
         } catch (referralError: any) {
-          console.error('❌ Error processing referral transaction:', {
+          console.error('❌ [REALTIME] Referral processing failed:', {
             error: referralError,
             message: referralError.message,
-            stack: referralError.stack
+            orderId: order.id
           });
-          // Don't fail the order, just log the referral error
-          console.warn('⚠️ Order successful but referral processing failed');
+          // Don't fail the order if referral processing fails
+          console.warn('⚠️ [REALTIME] Order successful but referral processing failed');
         }
       } else {
-        console.log('ℹ️ No referral code provided, skipping referral processing');
+        console.log('ℹ️ [REALTIME] No referral code provided, skipping commission processing');
       }
 
-      console.log('✅ Final step: Order checkout completed successfully for order:', order.id);
+      console.log('✅ [REALTIME] Checkout completed successfully:', {
+        orderId: order.id,
+        timestamp: new Date().toISOString()
+      });
+      
       return order;
     },
     onSuccess: (order) => {
-      console.log('🎉 Checkout mutation completed successfully for order:', order.id);
-      // Invalidate all relevant queries to ensure UI updates
+      console.log('🎉 [REALTIME] Checkout mutation successful:', {
+        orderId: order.id,
+        timestamp: new Date().toISOString()
+      });
+      
+      // Invalidate all relevant queries for immediate UI updates
       queryClient.invalidateQueries({ queryKey: ['orders'] });
       queryClient.invalidateQueries({ queryKey: ['referral-transactions'] });
       queryClient.invalidateQueries({ queryKey: ['user-referral-code'] });
       queryClient.invalidateQueries({ queryKey: ['admin-referrer-summary'] });
       queryClient.invalidateQueries({ queryKey: ['admin-referral-details'] });
+      
+      console.log('🔄 [REALTIME] All data refreshed for realtime updates');
     },
     onError: (error) => {
-      console.error('💥 Checkout mutation failed:', error);
+      console.error('💥 [REALTIME] Checkout failed completely:', {
+        error,
+        timestamp: new Date().toISOString()
+      });
     }
   });
 };

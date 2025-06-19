@@ -9,14 +9,14 @@ export const useReferralTransactions = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   
-  // Real-time subscription for referral transactions
+  // Enhanced real-time subscription for referral transactions
   useEffect(() => {
     if (!user?.id) return;
 
-    console.log('Setting up real-time subscription for referral transactions, user:', user.id);
+    console.log('🔄 [REALTIME] Setting up referral transactions subscription for user:', user.id);
 
     const channel = supabase
-      .channel('referral-transactions-changes')
+      .channel('user-transactions-realtime')
       .on(
         'postgres_changes',
         {
@@ -26,16 +26,16 @@ export const useReferralTransactions = () => {
           filter: `referrer_id=eq.${user.id}`
         },
         (payload) => {
-          console.log('Real-time referral transaction update:', payload);
+          console.log('💰 [REALTIME] User transaction update detected:', payload);
           queryClient.invalidateQueries({ queryKey: ['referral-transactions', user.id] });
-          // Also invalidate referral code to update stats
+          // Also update referral code stats
           queryClient.invalidateQueries({ queryKey: ['user-referral-code', user.id] });
         }
       )
       .subscribe();
 
     return () => {
-      console.log('Cleaning up referral transactions subscription');
+      console.log('🔌 [REALTIME] Cleaning up transactions subscription');
       supabase.removeChannel(channel);
     };
   }, [user?.id, queryClient]);
@@ -45,7 +45,7 @@ export const useReferralTransactions = () => {
     queryFn: async (): Promise<ReferralTransaction[]> => {
       if (!user?.id) return [];
 
-      console.log('Fetching referral transactions for user:', user.id);
+      console.log('💰 [REALTIME] Fetching referral transactions for user:', user.id);
 
       const { data, error } = await supabase
         .from('referral_transactions')
@@ -54,13 +54,21 @@ export const useReferralTransactions = () => {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching referral transactions:', error);
+        console.error('❌ [REALTIME] Error fetching referral transactions:', error);
         throw error;
       }
 
-      console.log('Referral transactions found:', data?.length || 0, 'transactions:', data);
+      console.log('✅ [REALTIME] Referral transactions fetched:', {
+        count: data?.length || 0,
+        transactions: data,
+        timestamp: new Date().toISOString()
+      });
+      
       return (data as ReferralTransaction[]) || [];
     },
     enabled: !!user?.id,
+    // Reduce stale time for more frequent updates
+    staleTime: 1000, // 1 second
+    refetchInterval: 3000, // Refetch every 3 seconds
   });
 };

@@ -26,10 +26,12 @@ interface ReferralDetail {
 export const useAdminReferrerSummary = () => {
   const queryClient = useQueryClient();
 
-  // Real-time subscription for admin referral data
+  // Enhanced real-time subscription for admin dashboard
   useEffect(() => {
+    console.log('🔄 [REALTIME] Setting up admin real-time subscriptions...');
+    
     const channel = supabase
-      .channel('admin-referral-changes')
+      .channel('admin-referral-realtime')
       .on(
         'postgres_changes',
         {
@@ -38,7 +40,7 @@ export const useAdminReferrerSummary = () => {
           table: 'referral_codes'
         },
         (payload) => {
-          console.log('Real-time admin referral codes update:', payload);
+          console.log('📊 [REALTIME] Referral codes update detected:', payload);
           queryClient.invalidateQueries({ queryKey: ['admin-referrer-summary'] });
         }
       )
@@ -50,14 +52,29 @@ export const useAdminReferrerSummary = () => {
           table: 'referral_transactions'
         },
         (payload) => {
-          console.log('Real-time admin referral transactions update:', payload);
+          console.log('💰 [REALTIME] Referral transaction update detected:', payload);
           queryClient.invalidateQueries({ queryKey: ['admin-referrer-summary'] });
           queryClient.invalidateQueries({ queryKey: ['admin-referral-details'] });
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'orders'
+        },
+        (payload) => {
+          console.log('📦 [REALTIME] Order update detected:', payload);
+          // Refresh admin data when new orders come in
+          queryClient.invalidateQueries({ queryKey: ['admin-referrer-summary'] });
+          queryClient.invalidateQueries({ queryKey: ['orders'] });
         }
       )
       .subscribe();
 
     return () => {
+      console.log('🔌 [REALTIME] Cleaning up admin subscriptions');
       supabase.removeChannel(channel);
     };
   }, [queryClient]);
@@ -65,7 +82,7 @@ export const useAdminReferrerSummary = () => {
   return useQuery({
     queryKey: ['admin-referrer-summary'],
     queryFn: async (): Promise<ReferrerSummary[]> => {
-      console.log('Fetching referrer summary for admin');
+      console.log('📊 [REALTIME] Fetching admin referrer summary...');
 
       // Get all referral codes with their stats
       const { data: referralCodes, error: codesError } = await supabase
@@ -80,15 +97,16 @@ export const useAdminReferrerSummary = () => {
         .order('total_commission_earned', { ascending: false });
 
       if (codesError) {
-        console.error('Error fetching referral codes:', codesError);
+        console.error('❌ [REALTIME] Error fetching referral codes:', codesError);
         throw codesError;
       }
 
       if (!referralCodes || referralCodes.length === 0) {
+        console.log('ℹ️ [REALTIME] No referral data found');
         return [];
       }
 
-      // Get user details for each referrer
+      // Get user details
       const userIds = referralCodes.map(code => code.user_id);
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
@@ -96,12 +114,10 @@ export const useAdminReferrerSummary = () => {
         .in('id', userIds);
 
       if (profilesError) {
-        console.error('Error fetching user profiles:', profilesError);
+        console.error('❌ [REALTIME] Error fetching user profiles:', profilesError);
         throw profilesError;
       }
 
-      // Get user emails from auth.users (we'll need to use a different approach since we can't query auth.users directly)
-      // For now, we'll use the profile data and referral code as identifier
       const result: ReferrerSummary[] = referralCodes.map(code => {
         const profile = profiles?.find(p => p.id === code.user_id);
         return {
@@ -110,13 +126,20 @@ export const useAdminReferrerSummary = () => {
           total_uses: code.total_uses,
           total_commission_earned: code.total_commission_earned,
           user_name: profile?.full_name || 'Unknown User',
-          user_email: code.code // Using referral code as identifier for now
+          user_email: code.code
         };
       });
 
-      console.log('Referrer summary data:', result);
+      console.log('✅ [REALTIME] Admin referrer summary fetched:', {
+        count: result.length,
+        timestamp: new Date().toISOString()
+      });
+      
       return result;
     },
+    // Reduce stale time for more frequent updates
+    staleTime: 1000, // 1 second
+    refetchInterval: 5000, // Refetch every 5 seconds
   });
 };
 
@@ -126,7 +149,7 @@ export const useAdminReferralDetails = (referrerUserId: string | null) => {
     queryFn: async (): Promise<ReferralDetail[]> => {
       if (!referrerUserId) return [];
 
-      console.log('Fetching referral details for user:', referrerUserId);
+      console.log('📋 [REALTIME] Fetching referral details for user:', referrerUserId);
 
       const { data: transactions, error } = await supabase
         .from('referral_transactions')
@@ -142,11 +165,12 @@ export const useAdminReferralDetails = (referrerUserId: string | null) => {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching referral details:', error);
+        console.error('❌ [REALTIME] Error fetching referral details:', error);
         throw error;
       }
 
       if (!transactions || transactions.length === 0) {
+        console.log('ℹ️ [REALTIME] No referral transactions found');
         return [];
       }
 
@@ -163,7 +187,7 @@ export const useAdminReferralDetails = (referrerUserId: string | null) => {
           .in('id', referredUserIds);
 
         if (profilesError) {
-          console.error('Error fetching referred user profiles:', profilesError);
+          console.error('❌ [REALTIME] Error fetching referred user profiles:', profilesError);
         } else {
           profiles = profilesData || [];
         }
@@ -177,9 +201,16 @@ export const useAdminReferralDetails = (referrerUserId: string | null) => {
         };
       });
 
-      console.log('Referral details data:', result);
+      console.log('✅ [REALTIME] Referral details fetched:', {
+        count: result.length,
+        timestamp: new Date().toISOString()
+      });
+      
       return result;
     },
     enabled: !!referrerUserId,
+    // Reduce stale time for more frequent updates
+    staleTime: 1000, // 1 second
+    refetchInterval: 3000, // Refetch every 3 seconds
   });
 };

@@ -22,17 +22,16 @@ export const useCreateReferralTransaction = () => {
     }) => {
       const cleanCode = referralCode.trim().toUpperCase();
       
-      console.log('🔄 Creating referral transaction - Step by step process:');
-      console.log('📋 Input data:', {
+      console.log('🔄 [REALTIME] Creating referral transaction:', {
         referralCode: cleanCode,
         orderId,
         orderTotal,
         commissionAmount,
-        referredUserId
+        referredUserId,
+        timestamp: new Date().toISOString()
       });
 
-      // Get referrer info from referral code
-      console.log('🔍 Step 1: Getting referrer info from referral code...');
+      // Get referrer info
       const { data: codeData, error: codeError } = await supabase
         .from('referral_codes')
         .select('user_id, is_active, code, total_uses, total_commission_earned')
@@ -41,31 +40,20 @@ export const useCreateReferralTransaction = () => {
         .single();
 
       if (codeError || !codeData) {
-        console.error('❌ Step 1 failed - Referral code not found or inactive:', {
+        console.error('❌ [REALTIME] Referral code validation failed:', {
           code: cleanCode,
-          error: codeError,
-          data: codeData
+          error: codeError
         });
         throw new Error('Referral code not found or inactive');
       }
 
-      console.log('✅ Step 1 success - Referral code owner found:', {
-        code: codeData.code,
-        ownerId: codeData.user_id,
-        currentUses: codeData.total_uses,
-        currentCommission: codeData.total_commission_earned
-      });
-
       // Prevent self-referral
       if (referredUserId && codeData.user_id === referredUserId) {
-        console.error('❌ Step 2 failed - Self-referral attempt detected');
+        console.error('❌ [REALTIME] Self-referral attempt blocked');
         throw new Error('Cannot use your own referral code');
       }
 
-      console.log('✅ Step 2 success - Self-referral check passed');
-
-      // Create the transaction record
-      console.log('📝 Step 3: Creating referral transaction record...');
+      // Create transaction record immediately
       const transactionData = {
         referrer_id: codeData.user_id,
         referred_user_id: referredUserId || null,
@@ -76,8 +64,7 @@ export const useCreateReferralTransaction = () => {
         status: 'pending' as const
       };
 
-      console.log('📝 Transaction data to insert:', transactionData);
-
+      console.log('📝 [REALTIME] Inserting transaction to database...');
       const { data: transaction, error: transactionError } = await supabase
         .from('referral_transactions')
         .insert(transactionData)
@@ -85,72 +72,56 @@ export const useCreateReferralTransaction = () => {
         .single();
 
       if (transactionError) {
-        console.error('❌ Step 3 failed - Error creating referral transaction:', {
+        console.error('❌ [REALTIME] Transaction creation failed:', {
           error: transactionError,
           data: transactionData
         });
         throw new Error(`Failed to create referral transaction: ${transactionError.message}`);
       }
 
-      console.log('✅ Step 3 success - Referral transaction created:', {
+      console.log('✅ [REALTIME] Transaction saved to database:', {
         transactionId: transaction.id,
-        transactionData: transaction
+        timestamp: new Date().toISOString()
       });
 
-      // Update referral code statistics using the database function
-      console.log('📊 Step 4: Updating referral code statistics...');
+      // Update referral statistics immediately
+      console.log('📊 [REALTIME] Updating referral statistics...');
       const { data: statsResult, error: statsError } = await supabase.rpc('increment_referral_stats', {
         referral_code: cleanCode,
         commission_amount: commissionAmount
       });
 
       if (statsError) {
-        console.error('❌ Step 4 warning - Error updating referral stats:', {
-          error: statsError,
-          code: cleanCode,
-          commission: commissionAmount
-        });
-        console.warn('⚠️ Transaction created but stats update failed - this might need manual correction');
+        console.error('❌ [REALTIME] Stats update failed:', statsError);
+        // Don't throw error here, transaction is already saved
+        console.warn('⚠️ [REALTIME] Transaction saved but stats update failed');
       } else {
-        console.log('✅ Step 4 success - Referral statistics updated successfully:', {
+        console.log('✅ [REALTIME] Statistics updated successfully:', {
           code: cleanCode,
           addedCommission: commissionAmount,
-          result: statsResult
+          timestamp: new Date().toISOString()
         });
       }
 
-      // Verify the stats were updated by fetching the updated code
-      console.log('🔍 Step 5: Verifying stats update...');
-      const { data: updatedCode, error: verifyError } = await supabase
-        .from('referral_codes')
-        .select('total_uses, total_commission_earned')
-        .eq('code', cleanCode)
-        .single();
-
-      if (verifyError) {
-        console.warn('⚠️ Step 5 warning - Could not verify stats update:', verifyError);
-      } else {
-        console.log('✅ Step 5 success - Verified updated stats:', {
-          code: cleanCode,
-          newTotalUses: updatedCode.total_uses,
-          newTotalCommission: updatedCode.total_commission_earned
-        });
-      }
-
-      console.log('🎉 All steps completed successfully! Referral transaction fully processed.');
+      console.log('🎉 [REALTIME] Referral transaction completed successfully');
       return transaction as ReferralTransaction;
     },
     onSuccess: (data) => {
-      console.log('🎯 Referral transaction mutation successful, invalidating queries...');
-      // Invalidate all related queries
+      console.log('🎯 [REALTIME] Transaction mutation successful, forcing immediate UI refresh...');
+      
+      // Force immediate invalidation of all related queries
       queryClient.invalidateQueries({ queryKey: ['referral-transactions'] });
       queryClient.invalidateQueries({ queryKey: ['user-referral-code'] });
       queryClient.invalidateQueries({ queryKey: ['admin-referrer-summary'] });
       queryClient.invalidateQueries({ queryKey: ['admin-referral-details'] });
-      console.log('🔄 All queries invalidated, UI should refresh with new data');
+      
+      // Also refresh orders
+      queryClient.invalidateQueries({ queryKey: ['orders'] });
+      
+      console.log('🔄 [REALTIME] All data invalidated for immediate UI updates');
     },
     onError: (error) => {
-      console.error('💥 Referral transaction mutation failed:', error);
+      console.error('💥 [REALTIME] Referral transaction mutation failed:', error);
     }
   });
 };
