@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { LogIn } from 'lucide-react';
 import { useCart } from '@/hooks/useCart';
-import { useFirebaseAuth } from '@/hooks/useFirebaseAuth';
+import { useAuth } from '@/hooks/useAuth';
 import { useLanguage } from '@/hooks/useLanguage';
 import UserMenu from '@/components/UserMenu';
 import CartIcon from '@/components/CartIcon';
@@ -17,7 +17,7 @@ interface HeaderProps {
 const Header = ({ shouldAnimateCart = false }: HeaderProps) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
-  const { user } = useFirebaseAuth();
+  const { user } = useAuth();
   const { t } = useLanguage();
 
   const isActive = (path: string) => location.pathname === path;

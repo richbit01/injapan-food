@@ -1,10 +1,10 @@
 
 import AuthForm from '@/components/AuthForm';
-import { useFirebaseAuth } from '@/hooks/useFirebaseAuth';
+import { useAuth } from '@/hooks/useAuth';
 import { useEffect } from 'react';
 
 const Auth = () => {
-  const { user } = useFirebaseAuth();
+  const { user } = useAuth();
   
   // Redirect to home page if user is logged in
   useEffect(() => {
