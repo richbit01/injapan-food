@@ -44,8 +44,6 @@ const Header = ({ shouldAnimateCart = false }: HeaderProps) => {
     { path: '/', label: t('nav.home') },
     { path: '/products', label: t('nav.products') },
     { path: '/how-to-buy', label: t('nav.howToBuy') },
-    // Add referral menu item only for authenticated users
-    ...(user ? [{ path: '/referral', label: t('nav.affiliate') }] : []),
   ];
 
   return (

@@ -10,7 +10,6 @@ import ProductDetail from '@/pages/ProductDetail';
 import Cart from '@/pages/Cart';
 import Auth from '@/pages/Auth';
 import Orders from '@/pages/Orders';
-import Referral from '@/pages/Referral';
 import HowToBuy from '@/pages/HowToBuy';
 import NotFound from '@/pages/NotFound';
 
@@ -23,8 +22,6 @@ import AddProduct from '@/pages/admin/AddProduct';
 import EditProduct from '@/pages/admin/EditProduct';
 import OrdersHistory from '@/pages/admin/OrdersHistory';
 import OrderConfirmation from '@/pages/admin/OrderConfirmation';
-import ReferralPanel from '@/pages/admin/ReferralPanel';
-import ReferralSettings from '@/pages/admin/ReferralSettings';
 import UserManagement from '@/pages/admin/UserManagement';
 import AdminLogs from '@/pages/admin/AdminLogs';
 import ImportExport from '@/pages/admin/ImportExport';
@@ -55,7 +52,6 @@ function App() {
               <Route path="/cart" element={<Cart />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/orders" element={<Orders />} />
-              <Route path="/referral" element={<Referral />} />
               <Route path="/how-to-buy" element={<HowToBuy />} />
               
               {/* Admin routes */}
@@ -68,8 +64,6 @@ function App() {
               <Route path="/admin/products/edit/:id" element={<EditProduct />} />
               <Route path="/admin/orders-history" element={<OrdersHistory />} />
               <Route path="/admin/order-confirmation" element={<OrderConfirmation />} />
-              <Route path="/admin/referral" element={<ReferralPanel />} />
-              <Route path="/admin/referral-settings" element={<ReferralSettings />} />
               <Route path="/admin/users" element={<UserManagement />} />
               <Route path="/admin/logs" element={<AdminLogs />} />
               <Route path="/admin/import-export" element={<ImportExport />} />

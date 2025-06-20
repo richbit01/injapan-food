@@ -1,276 +1,257 @@
-import { useState, useEffect } from 'react';
+
+import { useState } from 'react';
+import { Minus, Plus, Trash2, ShoppingBag } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { Plus } from 'lucide-react';
 import { useCart } from '@/hooks/useCart';
-import { formatPrice } from '@/utils/cart';
-import { prefectures } from '@/data/prefectures';
-import WhatsAppButton from '@/components/WhatsAppButton';
+import { useAuth } from '@/hooks/useFirebaseAuth';
+import { useLanguage } from '@/hooks/useLanguage';
+import { useConfirmOrder } from '@/hooks/useConfirmOrder';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import ReferralCodeInput from '@/components/ReferralCodeInput';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { toast } from '@/hooks/use-toast';
 
 const Cart = () => {
-  const { cart, updateQuantity, removeFromCart, total, clearCart } = useCart();
-  const [showCheckout, setShowCheckout] = useState(false);
-  const [referralCode, setReferralCode] = useState('');
-  const [isReferralValid, setIsReferralValid] = useState(false);
+  const { items, updateQuantity, removeItem, getTotalPrice, clearCart } = useCart();
+  const { user } = useAuth();
+  const { t } = useLanguage();
+  const { mutate: confirmOrder, isPending } = useConfirmOrder();
+  
   const [customerInfo, setCustomerInfo] = useState({
     name: '',
-    prefecture: '',
-    postal_code: '',
-    address: '',
+    email: '',
     phone: '',
+    address: '',
     notes: ''
   });
 
-  // Enhanced scroll to top when component mounts
-  useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'instant' });
-  }, []);
-
-  const handleQuantityChange = (itemId: string, newQuantity: number) => {
-    if (newQuantity <= 0) {
-      removeFromCart(itemId);
-    } else {
-      updateQuantity(itemId, newQuantity);
+  const handleQuantityChange = (id: string, change: number) => {
+    const item = items.find(item => item.id === id);
+    if (item) {
+      const newQuantity = Math.max(0, item.quantity + change);
+      if (newQuantity === 0) {
+        removeItem(id);
+      } else {
+        updateQuantity(id, newQuantity);
+      }
     }
   };
 
-  const handleReferralValidation = (isValid: boolean, code?: string) => {
-    setIsReferralValid(isValid);
-    if (isValid && code) {
-      setReferralCode(code);
-      console.log('✅ Referral code set for checkout:', code);
-    } else {
-      setReferralCode('');
-      console.log('❌ Referral code cleared');
+  const handleSubmitOrder = () => {
+    if (!user) {
+      toast({
+        title: t('cart.loginRequired'),
+        description: t('cart.loginRequiredDesc'),
+        variant: "destructive",
+      });
+      return;
     }
-  };
 
-  const handleCheckoutSuccess = () => {
-    clearCart();
-    setShowCheckout(false);
-    setReferralCode('');
-    setIsReferralValid(false);
-    setCustomerInfo({
-      name: '',
-      prefecture: '',
-      postal_code: '',
-      address: '',
-      phone: '',
-      notes: ''
+    if (!customerInfo.name || !customerInfo.email || !customerInfo.phone || !customerInfo.address) {
+      toast({
+        title: t('cart.fillRequired'),
+        description: t('cart.fillRequiredDesc'),
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const orderData = {
+      user_id: user.uid,
+      user_email: user.email || '',
+      customer_name: customerInfo.name,
+      customer_email: customerInfo.email,
+      customer_phone: customerInfo.phone,
+      customer_address: customerInfo.address,
+      notes: customerInfo.notes,
+      items: items,
+      total_amount: getTotalPrice(),
+      status: 'pending' as const
+    };
+
+    confirmOrder(orderData, {
+      onSuccess: () => {
+        clearCart();
+        setCustomerInfo({
+          name: '',
+          email: '',
+          phone: '',
+          address: '',
+          notes: ''
+        });
+      }
     });
   };
 
-  const isFormValid = () => {
-    return customerInfo.name && 
-           customerInfo.prefecture && 
-           customerInfo.postal_code && 
-           customerInfo.address && 
-           customerInfo.phone;
-  };
-
-  if (cart.length === 0) {
+  if (items.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <>
         <Header />
-        <div className="container mx-auto px-4 py-16 text-center">
-          <div className="text-6xl mb-6">🛒</div>
-          <h1 className="text-3xl font-bold mb-4">Keranjang Kosong</h1>
-          <p className="text-gray-600 mb-8">Belum ada produk yang ditambahkan ke keranjang</p>
-          <Link to="/products" className="btn-primary">
-            Mulai Belanja
-          </Link>
+        <div className="min-h-screen bg-gray-50 py-8">
+          <div className="container mx-auto px-4">
+            <div className="text-center py-16">
+              <ShoppingBag className="w-24 h-24 text-gray-300 mx-auto mb-4" />
+              <h2 className="text-2xl font-bold text-gray-800 mb-2">{t('cart.empty')}</h2>
+              <p className="text-gray-600 mb-6">{t('cart.emptyDesc')}</p>
+              <Link to="/products">
+                <Button className="bg-primary hover:bg-primary/90">
+                  {t('cart.continueShopping')}
+                </Button>
+              </Link>
+            </div>
+          </div>
         </div>
         <Footer />
-      </div>
+      </>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <>
       <Header />
-      
-      <div className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold mb-8">Keranjang Belanja</h1>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Cart Items */}
-          <div className="lg:col-span-2 space-y-4">
-            {cart.map((item) => (
-              <div key={item.id} className="bg-white p-6 rounded-lg shadow-md">
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <img
-                    src={item.product.image_url}
-                    alt={item.product.name}
-                    className="w-full sm:w-24 h-24 object-cover rounded-lg"
-                  />
-                  
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-lg mb-2">{item.product.name}</h3>
-                    <p className="text-gray-600 text-sm mb-3">{item.product.description}</p>
-                    <div className="text-lg font-bold text-primary">
-                      {formatPrice(item.product.price)}
-                    </div>
-                  </div>
-                  
-                  <div className="flex flex-col items-end space-y-2">
-                    <div className="flex items-center border border-gray-300 rounded-lg">
-                      <button
-                        onClick={() => handleQuantityChange(item.id, item.quantity - 1)}
-                        className="px-3 py-1 text-gray-600 hover:text-primary"
-                      >
-                        -
-                      </button>
-                      <span className="px-3 py-1 border-x border-gray-300">{item.quantity}</span>
-                      <button
-                        onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
-                        className="px-3 py-1 text-gray-600 hover:text-primary"
-                      >
-                        +
-                      </button>
-                    </div>
-                    
-                    <div className="text-xl font-bold">
-                      {formatPrice(item.product.price * item.quantity)}
-                    </div>
-                    
-                    <button
-                      onClick={() => removeFromCart(item.id)}
-                      className="text-red-600 hover:text-red-800 text-sm"
-                    >
-                      Hapus
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Order Summary */}
-          <div className="lg:col-span-1">
-            <div className="bg-white p-6 rounded-lg shadow-md sticky top-8">
-              <h2 className="text-xl font-bold mb-4">Ringkasan Pesanan</h2>
-              
-              <div className="space-y-2 mb-4">
-                {cart.map((item) => (
-                  <div key={item.id} className="flex justify-between text-sm">
-                    <span>{item.product.name} x{item.quantity}</span>
-                    <span>{formatPrice(item.product.price * item.quantity)}</span>
-                  </div>
-                ))}
-              </div>
-              
-              <div className="border-t border-gray-200 pt-4 mb-6">
-                <div className="flex justify-between text-xl font-bold">
-                  <span>Total:</span>
-                  <span className="text-primary">{formatPrice(total)}</span>
-                </div>
-              </div>
-
-              {!showCheckout ? (
-                <button
-                  onClick={() => setShowCheckout(true)}
-                  className="w-full btn-primary"
-                >
-                  Lanjut ke Checkout
-                </button>
-              ) : (
+      <div className="min-h-screen bg-gray-50 py-8">
+        <div className="container mx-auto px-4">
+          <h1 className="text-3xl font-bold text-gray-800 mb-8">{t('cart.title')}</h1>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Cart Items */}
+            <div className="lg:col-span-2">
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <h2 className="text-xl font-semibold mb-4">{t('cart.items')}</h2>
                 <div className="space-y-4">
-                  <h3 className="font-semibold">Informasi Pengiriman</h3>
-                  
-                  <input
-                    type="text"
-                    placeholder="Nama Lengkap"
-                    value={customerInfo.name}
-                    onChange={(e) => setCustomerInfo({...customerInfo, name: e.target.value})}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary"
-                  />
-                  
-                  <select
-                    value={customerInfo.prefecture}
-                    onChange={(e) => setCustomerInfo({...customerInfo, prefecture: e.target.value})}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary"
-                  >
-                    <option value="">Pilih Prefektur</option>
-                    {prefectures.map((pref) => (
-                      <option key={pref.name} value={pref.name}>
-                        {pref.name} ({pref.name_en})
-                      </option>
-                    ))}
-                  </select>
-                  
-                  <input
-                    type="text"
-                    placeholder="Kode Pos"
-                    value={customerInfo.postal_code}
-                    onChange={(e) => setCustomerInfo({...customerInfo, postal_code: e.target.value})}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary"
-                  />
-                  
-                  <textarea
-                    placeholder="Alamat Lengkap"
-                    value={customerInfo.address}
-                    onChange={(e) => setCustomerInfo({...customerInfo, address: e.target.value})}
-                    rows={3}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary"
-                  />
-                  
-                  <input
-                    type="tel"
-                    placeholder="Nomor HP Jepang"
-                    value={customerInfo.phone}
-                    onChange={(e) => setCustomerInfo({...customerInfo, phone: e.target.value})}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary"
-                  />
-
-                  {/* Referral Code Input */}
-                  <ReferralCodeInput
-                    value={referralCode}
-                    onChange={setReferralCode}
-                    onValidation={handleReferralValidation}
-                  />
-                  
-                  <textarea
-                    placeholder="Catatan Tambahan (Opsional)"
-                    value={customerInfo.notes}
-                    onChange={(e) => setCustomerInfo({...customerInfo, notes: e.target.value})}
-                    rows={2}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary"
-                  />
-                  
-                  {isFormValid() ? (
-                    <WhatsAppButton
-                      cart={cart}
-                      total={total}
-                      customerInfo={customerInfo}
-                      referralCode={isReferralValid ? referralCode : undefined}
-                      onSuccess={handleCheckoutSuccess}
-                    />
-                  ) : (
-                    <button
-                      disabled
-                      className="w-full bg-gray-400 text-white font-semibold py-4 px-6 rounded-lg cursor-not-allowed"
-                    >
-                      Lengkapi Data Pengiriman
-                    </button>
-                  )}
-                  
-                  <button
-                    onClick={() => setShowCheckout(false)}
-                    className="w-full text-gray-600 hover:text-primary"
-                  >
-                    Kembali ke Keranjang
-                  </button>
+                  {items.map((item) => (
+                    <div key={item.id} className="flex items-center space-x-4 border-b pb-4">
+                      <img
+                        src={item.image}
+                        alt={item.name}
+                        className="w-20 h-20 object-cover rounded-lg"
+                      />
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-gray-800">{item.name}</h3>
+                        <p className="text-primary font-bold">¥{item.price}</p>
+                        {item.selectedVariant && (
+                          <p className="text-sm text-gray-600">
+                            {item.selectedVariant.type}: {item.selectedVariant.value}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => handleQuantityChange(item.id, -1)}
+                          className="p-1 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
+                        >
+                          <Minus className="w-4 h-4" />
+                        </button>
+                        <span className="w-8 text-center font-semibold">{item.quantity}</span>
+                        <button
+                          onClick={() => handleQuantityChange(item.id, 1)}
+                          className="p-1 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
+                        >
+                          <Plus className="w-4 h-4" />
+                        </button>
+                      </div>
+                      <button
+                        onClick={() => removeItem(item.id)}
+                        className="p-2 text-red-500 hover:bg-red-50 rounded-full transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
                 </div>
-              )}
+              </div>
+            </div>
+
+            {/* Order Summary & Customer Info */}
+            <div className="space-y-6">
+              {/* Customer Information */}
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <h2 className="text-xl font-semibold mb-4">{t('cart.customerInfo')}</h2>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="name">{t('cart.name')} *</Label>
+                    <Input
+                      id="name"
+                      type="text"
+                      value={customerInfo.name}
+                      onChange={(e) => setCustomerInfo({...customerInfo, name: e.target.value})}
+                      placeholder={t('cart.namePlaceholder')}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="email">{t('cart.email')} *</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={customerInfo.email}
+                      onChange={(e) => setCustomerInfo({...customerInfo, email: e.target.value})}
+                      placeholder={t('cart.emailPlaceholder')}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="phone">{t('cart.phone')} *</Label>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      value={customerInfo.phone}
+                      onChange={(e) => setCustomerInfo({...customerInfo, phone: e.target.value})}
+                      placeholder={t('cart.phonePlaceholder')}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="address">{t('cart.address')} *</Label>
+                    <Textarea
+                      id="address"
+                      value={customerInfo.address}
+                      onChange={(e) => setCustomerInfo({...customerInfo, address: e.target.value})}
+                      placeholder={t('cart.addressPlaceholder')}
+                      rows={3}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="notes">{t('cart.notes')}</Label>
+                    <Textarea
+                      id="notes"
+                      value={customerInfo.notes}
+                      onChange={(e) => setCustomerInfo({...customerInfo, notes: e.target.value})}
+                      placeholder={t('cart.notesPlaceholder')}
+                      rows={2}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Order Summary */}
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <h2 className="text-xl font-semibold mb-4">{t('cart.summary')}</h2>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span>{t('cart.subtotal')}</span>
+                    <span>¥{getTotalPrice()}</span>
+                  </div>
+                  <div className="flex justify-between font-bold text-lg border-t pt-2">
+                    <span>{t('cart.total')}</span>
+                    <span>¥{getTotalPrice()}</span>
+                  </div>
+                </div>
+                
+                <Button 
+                  onClick={handleSubmitOrder}
+                  disabled={isPending}
+                  className="w-full mt-6 bg-primary hover:bg-primary/90"
+                >
+                  {isPending ? t('cart.processing') : t('cart.placeOrder')}
+                </Button>
+              </div>
             </div>
           </div>
         </div>
       </div>
-
       <Footer />
-    </div>
+    </>
   );
 };
 
