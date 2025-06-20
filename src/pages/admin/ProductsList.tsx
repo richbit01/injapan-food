@@ -1,24 +1,34 @@
 
 import { useState } from 'react';
 import { useProducts } from '@/hooks/useProducts';
-import { supabase } from '@/integrations/supabase/client';
+import { useMoveToRecycleBin } from '@/hooks/useRecycleBin';
 import { toast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { Edit, Trash, Search, Filter, Eye } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import AdminLayout from '@/components/admin/AdminLayout';
 
 const ProductsList = () => {
   const { data: products = [], refetch, isLoading } = useProducts();
+  const moveToRecycleBin = useMoveToRecycleBin();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [deletingProducts, setDeletingProducts] = useState<Set<string>>(new Set());
-
-  console.log('Products data:', products); // Debug log
 
   const categories = Array.from(new Set(products.map(p => p.category)));
 
@@ -29,68 +39,34 @@ const ProductsList = () => {
     return matchesSearch && matchesCategory;
   });
 
-  const handleDeleteProduct = async (productId: string, imageUrl?: string) => {
-    if (!confirm('Apakah Anda yakin ingin menghapus produk ini?')) return;
-
-    console.log('Starting deletion of product:', productId);
-    
-    // Add product to deleting set to show loading state
-    setDeletingProducts(prev => new Set(prev).add(productId));
+  const handleDeleteProduct = async (product: any) => {
+    setDeletingProducts(prev => new Set(prev).add(product.id));
 
     try {
-      // Delete image from storage if exists
-      if (imageUrl && imageUrl.includes('product-images')) {
-        console.log('Deleting image from storage:', imageUrl);
-        const imagePath = imageUrl.split('/').pop();
-        if (imagePath) {
-          const { error: storageError } = await supabase.storage
-            .from('product-images')
-            .remove([imagePath]);
-          
-          if (storageError) {
-            console.warn('Error deleting image from storage:', storageError);
-            // Continue with product deletion even if image deletion fails
-          } else {
-            console.log('Image deleted successfully from storage');
-          }
-        }
-      }
-
-      // Delete product from database
-      console.log('Deleting product from database:', productId);
-      const { error } = await supabase
-        .from('products')
-        .delete()
-        .eq('id', productId);
-
-      if (error) {
-        console.error('Database deletion error:', error);
-        throw error;
-      }
-
-      console.log('Product deleted successfully from database');
-
-      toast({
-        title: "Berhasil!",
-        description: "Produk berhasil dihapus",
+      await moveToRecycleBin.mutateAsync({
+        table: 'products',
+        itemId: product.id,
+        itemData: product
       });
 
-      // Force refetch the products list
-      console.log('Refetching products list...');
+      toast({
+        title: "Berhasil",
+        description: "Produk telah dipindahkan ke Recycle Bin",
+      });
+
       await refetch();
       
     } catch (error) {
-      console.error('Error deleting product:', error);
+      console.error('Error moving product to recycle bin:', error);
       toast({
-        title: "Error",
-        description: "Gagal menghapus produk",
+        title: "Terjadi Kesalahan",
+        description: "Gagal memindahkan produk ke Recycle Bin",
         variant: "destructive"
       });
     } finally {
-      // Remove product from deleting set
       setDeletingProducts(prev => {
         const newSet = new Set(prev);
-        newSet.delete(productId);
+        newSet.delete(product.id);
         return newSet;
       });
     }
@@ -114,7 +90,7 @@ const ProductsList = () => {
             <h1 className="text-3xl font-bold text-gray-900">Kelola Produk</h1>
             <p className="text-gray-600">Lihat dan kelola semua produk</p>
           </div>
-          <Link to="/admin/products/add">
+          <Link to="/admin/add-product">
             <Button className="bg-green-600 hover:bg-green-700">
               Tambah Produk Baru
             </Button>
@@ -201,19 +177,40 @@ const ProductsList = () => {
                         <Edit className="w-4 h-4" />
                       </Button>
                     </Link>
-                    <Button 
-                      size="sm" 
-                      variant="destructive" 
-                      onClick={() => handleDeleteProduct(product.id, product.image_url)}
-                      disabled={deletingProducts.has(product.id)}
-                      title="Hapus Produk"
-                    >
-                      {deletingProducts.has(product.id) ? (
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      ) : (
-                        <Trash className="w-4 h-4" />
-                      )}
-                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button 
+                          size="sm" 
+                          variant="destructive" 
+                          disabled={deletingProducts.has(product.id)}
+                          title="Hapus Produk"
+                        >
+                          {deletingProducts.has(product.id) ? (
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <Trash className="w-4 h-4" />
+                          )}
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Konfirmasi Penghapusan Produk</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Produk "<strong>{product.name}</strong>" akan dipindahkan ke Recycle Bin dan dapat dipulihkan sewaktu-waktu. 
+                            Tindakan ini dapat dibatalkan melalui menu Recycle Bin.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Batal</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => handleDeleteProduct(product)}
+                            className="bg-red-600 hover:bg-red-700"
+                          >
+                            Hapus Produk
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 </div>
               ))}
