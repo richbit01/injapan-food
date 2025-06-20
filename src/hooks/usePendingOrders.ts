@@ -64,17 +64,14 @@ export const usePendingOrders = () => {
         throw error;
       }
 
-      // Get referral transactions for these orders
+      // Get referral transactions for these orders separately to avoid relationship issues
       const orderIds = orders?.map(order => order.id) || [];
       let referralTransactions: any[] = [];
       
       if (orderIds.length > 0) {
         const { data: transactions, error: transactionError } = await supabase
           .from('referral_transactions')
-          .select(`
-            *,
-            referral_codes!inner(code, user_id)
-          `)
+          .select('*')
           .in('order_id', orderIds)
           .eq('status', 'pending');
 
