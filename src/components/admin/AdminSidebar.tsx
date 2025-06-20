@@ -1,4 +1,3 @@
-
 import { Link, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, 
@@ -10,7 +9,6 @@ import {
   CheckCircle,
   History,
   Trash2,
-  FileText,
   BarChart3,
   Upload
 } from 'lucide-react';
@@ -60,11 +58,6 @@ const AdminSidebar = () => {
       title: 'Manajemen User',
       href: '/admin/users',
       icon: Users,
-    },
-    {
-      title: 'Log Admin',
-      href: '/admin/logs',
-      icon: FileText,
     },
     {
       title: 'Import/Export',
