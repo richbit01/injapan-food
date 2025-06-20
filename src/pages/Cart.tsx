@@ -139,7 +139,7 @@ const Cart = () => {
                               {/* Item Total & Remove */}
                               <div className="flex items-center gap-4">
                                 <div className="text-right">
-                                  <div className="text-xl font-bold text-primary">
+                                  <div className="text-lg font-bold text-primary">
                                     ¥{(item.price * item.quantity).toLocaleString()}
                                   </div>
                                 </div>
@@ -164,12 +164,12 @@ const Cart = () => {
                   <div className="space-y-3">
                     <div className="flex justify-between items-center text-gray-600">
                       <span className="text-lg">Subtotal ({cart.reduce((sum, item) => sum + item.quantity, 0)} item)</span>
-                      <span className="text-xl font-semibold text-gray-800">¥{total.toLocaleString()}</span>
+                      <span className="text-lg font-semibold text-gray-800">¥{total.toLocaleString()}</span>
                     </div>
                     <div className="border-t border-gray-200 pt-3">
                       <div className="flex justify-between items-center">
                         <span className="text-2xl font-bold text-gray-800">Total Belanja</span>
-                        <span className="text-3xl font-bold text-primary">¥{total.toLocaleString()}</span>
+                        <span className="text-2xl font-bold text-primary">¥{total.toLocaleString()}</span>
                       </div>
                     </div>
                   </div>
