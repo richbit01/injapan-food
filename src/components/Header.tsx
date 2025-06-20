@@ -22,6 +22,15 @@ const Header = ({ shouldAnimateCart = false }: HeaderProps) => {
 
   const isActive = (path: string) => location.pathname === path;
 
+  // Handle navigation with scroll to top
+  const handleNavClick = () => {
+    setIsMenuOpen(false);
+    // Small delay to ensure navigation happens first
+    setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 100);
+  };
+
   const navItems = [
     { path: '/', label: t('nav.home') },
     { path: '/products', label: t('nav.products') },
@@ -35,7 +44,7 @@ const Header = ({ shouldAnimateCart = false }: HeaderProps) => {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2">
+          <Link to="/" onClick={handleNavClick} className="flex items-center space-x-2">
             <div className="w-10 h-10 rounded-lg overflow-hidden">
               <img 
                 src="/lovable-uploads/022a8dd4-6c9e-4b02-82a8-703a2cbfb51a.png" 
@@ -54,6 +63,7 @@ const Header = ({ shouldAnimateCart = false }: HeaderProps) => {
               <Link
                 key={item.path}
                 to={item.path}
+                onClick={handleNavClick}
                 className={`font-medium transition-colors duration-200 ${
                   isActive(item.path)
                     ? 'text-primary border-b-2 border-primary'
@@ -73,6 +83,7 @@ const Header = ({ shouldAnimateCart = false }: HeaderProps) => {
             {/* Cart */}
             <Link
               to="/cart"
+              onClick={handleNavClick}
               className="relative p-2 text-gray-700 hover:text-primary transition-colors duration-200"
               aria-label="Shopping Cart"
             >
@@ -83,7 +94,7 @@ const Header = ({ shouldAnimateCart = false }: HeaderProps) => {
             {user ? (
               <UserMenu />
             ) : (
-              <Link to="/auth">
+              <Link to="/auth" onClick={handleNavClick}>
                 <Button variant="outline" size="sm" className="flex items-center space-x-2">
                   <LogIn className="w-4 h-4" />
                   <span className="hidden sm:inline">{t('nav.login')}</span>
@@ -119,7 +130,7 @@ const Header = ({ shouldAnimateCart = false }: HeaderProps) => {
                 <Link
                   key={item.path}
                   to={item.path}
-                  onClick={() => setIsMenuOpen(false)}
+                  onClick={handleNavClick}
                   className={`font-medium transition-colors duration-200 ${
                     isActive(item.path)
                       ? 'text-primary'
@@ -132,7 +143,7 @@ const Header = ({ shouldAnimateCart = false }: HeaderProps) => {
               {!user && (
                 <Link
                   to="/auth"
-                  onClick={() => setIsMenuOpen(false)}
+                  onClick={handleNavClick}
                   className="text-gray-700 hover:text-primary font-medium"
                 >
                   {t('nav.login')} / {t('nav.register')}

@@ -1,5 +1,4 @@
-
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useProducts } from '@/hooks/useProducts';
 import { useCartAnimation } from '@/hooks/useCartAnimation';
 import { useLanguage } from '@/hooks/useLanguage';
@@ -24,6 +23,11 @@ const Products = () => {
     triggerAnimation,
     resetAnimation
   } = useCartAnimation();
+
+  // Scroll to top when component mounts
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
 
   const categories = Array.from(new Set(products.map(p => p.category)));
 
