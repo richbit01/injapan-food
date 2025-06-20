@@ -58,7 +58,7 @@ const CheckoutForm = ({ cart, total, onOrderComplete }: CheckoutFormProps) => {
       return `- ${item.name}${variants ? ` | Varian: ${variants}` : ''} | Qty: ${item.quantity} | ¥${(item.price * item.quantity).toLocaleString()}`;
     }).join('\n');
 
-    const message = `Halo Admin Injapan Food 👋
+    const message = `Halo Admin Injapan Food
 
 Saya ingin memesan produk melalui website. Berikut detail pesanan saya:
 
@@ -78,7 +78,7 @@ ${productList}
 
 ${data.notes ? `Catatan: ${data.notes}` : ''}
 
-Mohon konfirmasi pesanan saya. Terima kasih banyak! `;
+Mohon konfirmasi pesanan saya. Terima kasih banyak;
 
     return encodeURIComponent(message);
   };
