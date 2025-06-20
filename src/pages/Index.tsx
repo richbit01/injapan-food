@@ -1,4 +1,5 @@
 
+import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import ProductCard from '@/components/ProductCard';
 import Header from '@/components/Header';
@@ -15,6 +16,11 @@ const Index = () => {
     queryFn: getCategories,
   });
   const { t } = useLanguage();
+
+  // Enhanced scroll to top when component mounts
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }, []);
 
   const featuredProducts = products.slice(0, 8);
 
