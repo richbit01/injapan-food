@@ -54,13 +54,34 @@ export const useRestoreFromRecycleBin = () => {
   return useMutation({
     mutationFn: async (item: RecycleBinItem) => {
       if (item.original_table === 'products') {
-        const { error: restoreError } = await supabase
+        // Check if product with same ID already exists
+        const { data: existingProduct } = await supabase
           .from('products')
-          .insert([item.data]);
+          .select('id')
+          .eq('id', item.original_id)
+          .single();
 
-        if (restoreError) throw restoreError;
+        if (existingProduct) {
+          // If product already exists, generate a new ID
+          const productData = { ...item.data };
+          delete productData.id; // Remove the ID so Supabase generates a new one
+          
+          const { error: restoreError } = await supabase
+            .from('products')
+            .insert([productData]);
+
+          if (restoreError) throw restoreError;
+        } else {
+          // If product doesn't exist, restore with original ID
+          const { error: restoreError } = await supabase
+            .from('products')
+            .insert([item.data]);
+
+          if (restoreError) throw restoreError;
+        }
       }
 
+      // Remove from recycle bin
       const { error: deleteError } = await supabase
         .from('recycle_bin')
         .delete()
