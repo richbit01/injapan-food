@@ -1,7 +1,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Order, OrderItem } from '@/types';
+import { Order, CartItem } from '@/types';
 
 export const useOrders = () => {
   return useQuery({
@@ -19,7 +19,18 @@ export const useOrders = () => {
 
       return data?.map(order => ({
         ...order,
-        items: order.items as unknown as OrderItem[],
+        items: (order.items as any[]).map(item => ({
+          ...item,
+          product: item.product || {
+            id: item.id || '',
+            name: item.name || '',
+            price: item.price || 0,
+            image_url: item.image_url || '',
+            category: '',
+            description: '',
+            stock: 0
+          }
+        })) as CartItem[],
         customer_info: order.customer_info as Order['customer_info'],
         status: order.status as Order['status']
       })) || [];
@@ -37,7 +48,7 @@ export const useCreateOrder = () => {
       customerInfo,
       userId
     }: {
-      items: OrderItem[];
+      items: CartItem[];
       totalPrice: number;
       customerInfo: any;
       userId?: string;

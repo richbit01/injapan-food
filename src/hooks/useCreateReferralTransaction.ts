@@ -89,7 +89,11 @@ export const useCreateReferralTransaction = () => {
       // DO NOT update referral statistics yet - wait for admin confirmation
       console.log('⏳ [REFERRAL] Transaction created with pending status, awaiting admin confirmation');
       
-      return transaction as ReferralTransaction;
+      // Map the database response to match our ReferralTransaction type
+      return {
+        ...transaction,
+        updated_at: transaction.created_at // Use created_at as fallback for updated_at
+      } as ReferralTransaction;
     },
     onSuccess: (data) => {
       console.log('🎯 [REFERRAL] Pending transaction mutation successful:', {

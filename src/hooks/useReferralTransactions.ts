@@ -64,7 +64,11 @@ export const useReferralTransactions = () => {
         timestamp: new Date().toISOString()
       });
       
-      return (data as ReferralTransaction[]) || [];
+      // Map the database response to match our ReferralTransaction type
+      return (data || []).map(transaction => ({
+        ...transaction,
+        updated_at: transaction.confirmed_at || transaction.created_at
+      })) as ReferralTransaction[];
     },
     enabled: !!user?.id,
     // Reduce stale time for more frequent updates
