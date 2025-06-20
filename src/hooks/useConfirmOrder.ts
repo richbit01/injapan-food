@@ -13,13 +13,7 @@ export const useConfirmOrder = () => {
         throw new Error('Admin authentication required');
       }
 
-      console.log(`🔄 [ADMIN] Confirming order:`, {
-        orderId,
-        adminId: user.id,
-        timestamp: new Date().toISOString()
-      });
-
-      // Step 1: Update order status to 'completed' instead of 'confirmed'
+      // Step 1: Update order status to 'completed'
       const { data: order, error: orderError } = await supabase
         .from('orders')
         .update({ 
@@ -31,14 +25,8 @@ export const useConfirmOrder = () => {
         .single();
 
       if (orderError) {
-        console.error(`❌ [ADMIN] Failed to update order status:`, orderError);
         throw new Error(`Failed to confirm order: ${orderError.message}`);
       }
-
-      console.log(`✅ [ADMIN] Order status updated to completed:`, {
-        orderId: order.id,
-        newStatus: order.status
-      });
 
       // Step 2: Confirm referral transaction if exists
       if (referralTransactionId) {
@@ -49,42 +37,24 @@ export const useConfirmOrder = () => {
           });
 
           if (confirmError) {
-            console.error('❌ [ADMIN] Failed to confirm referral transaction:', confirmError);
             throw confirmError;
           }
-
-          console.log('✅ [ADMIN] Referral transaction confirmed:', {
-            transactionId: referralTransactionId
-          });
         } catch (referralError) {
-          console.error(`❌ [ADMIN] Referral transaction confirmation failed:`, referralError);
-          console.warn(`⚠️ [ADMIN] Order confirmed but referral processing failed`);
+          // Continue even if referral processing fails
         }
       }
-
-      console.log(`🎉 [ADMIN] Order confirmation completed successfully:`, {
-        orderId: order.id,
-        finalStatus: order.status
-      });
 
       return order;
     },
     onSuccess: (order) => {
-      console.log(`🎯 [ADMIN] Order confirmation mutation successful:`, {
-        orderId: order.id,
-        status: order.status
-      });
-      
       // Invalidate all relevant queries
       queryClient.invalidateQueries({ queryKey: ['orders'] });
       queryClient.invalidateQueries({ queryKey: ['pending-orders'] });
       queryClient.invalidateQueries({ queryKey: ['referral-transactions'] });
       queryClient.invalidateQueries({ queryKey: ['user-referral-code'] });
-      
-      console.log('🔄 [ADMIN] All data refreshed after order confirmation');
     },
     onError: (error) => {
-      console.error(`💥 [ADMIN] Order confirmation failed:`, error);
+      console.error('Order confirmation failed:', error);
     }
   });
 
@@ -93,12 +63,6 @@ export const useConfirmOrder = () => {
       if (!user?.id) {
         throw new Error('Admin authentication required');
       }
-
-      console.log(`🔄 [ADMIN] Cancelling order:`, {
-        orderId,
-        adminId: user.id,
-        timestamp: new Date().toISOString()
-      });
 
       // Step 1: Update order status
       const { data: order, error: orderError } = await supabase
@@ -112,14 +76,8 @@ export const useConfirmOrder = () => {
         .single();
 
       if (orderError) {
-        console.error(`❌ [ADMIN] Failed to update order status:`, orderError);
         throw new Error(`Failed to cancel order: ${orderError.message}`);
       }
-
-      console.log(`✅ [ADMIN] Order status updated to cancelled:`, {
-        orderId: order.id,
-        newStatus: order.status
-      });
 
       // Step 2: Cancel referral transaction if exists
       if (referralTransactionId) {
@@ -130,42 +88,24 @@ export const useConfirmOrder = () => {
           });
 
           if (cancelError) {
-            console.error('❌ [ADMIN] Failed to cancel referral transaction:', cancelError);
             throw cancelError;
           }
-
-          console.log('✅ [ADMIN] Referral transaction cancelled:', {
-            transactionId: referralTransactionId
-          });
         } catch (referralError) {
-          console.error(`❌ [ADMIN] Referral transaction cancellation failed:`, referralError);
-          console.warn(`⚠️ [ADMIN] Order cancelled but referral processing failed`);
+          // Continue even if referral processing fails
         }
       }
-
-      console.log(`🎉 [ADMIN] Order cancellation completed successfully:`, {
-        orderId: order.id,
-        finalStatus: order.status
-      });
 
       return order;
     },
     onSuccess: (order) => {
-      console.log(`🎯 [ADMIN] Order cancellation mutation successful:`, {
-        orderId: order.id,
-        status: order.status
-      });
-      
       // Invalidate all relevant queries
       queryClient.invalidateQueries({ queryKey: ['orders'] });
       queryClient.invalidateQueries({ queryKey: ['pending-orders'] });
       queryClient.invalidateQueries({ queryKey: ['referral-transactions'] });
       queryClient.invalidateQueries({ queryKey: ['user-referral-code'] });
-      
-      console.log('🔄 [ADMIN] All data refreshed after order cancellation');
     },
     onError: (error) => {
-      console.error(`💥 [ADMIN] Order cancellation failed:`, error);
+      console.error('Order cancellation failed:', error);
     }
   });
 

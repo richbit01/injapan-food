@@ -9,11 +9,9 @@ export const useReferralTransactions = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   
-  // Enhanced real-time subscription for referral transactions
+  // Optimized real-time subscription for referral transactions
   useEffect(() => {
     if (!user?.id) return;
-
-    console.log('🔄 [REALTIME] Setting up referral transactions subscription for user:', user.id);
 
     const channel = supabase
       .channel('user-transactions-realtime')
@@ -26,16 +24,13 @@ export const useReferralTransactions = () => {
           filter: `referrer_id=eq.${user.id}`
         },
         (payload) => {
-          console.log('💰 [REALTIME] User transaction update detected:', payload);
           queryClient.invalidateQueries({ queryKey: ['referral-transactions', user.id] });
-          // Also update referral code stats
           queryClient.invalidateQueries({ queryKey: ['user-referral-code', user.id] });
         }
       )
       .subscribe();
 
     return () => {
-      console.log('🔌 [REALTIME] Cleaning up transactions subscription');
       supabase.removeChannel(channel);
     };
   }, [user?.id, queryClient]);
@@ -45,8 +40,6 @@ export const useReferralTransactions = () => {
     queryFn: async (): Promise<ReferralTransaction[]> => {
       if (!user?.id) return [];
 
-      console.log('💰 [REALTIME] Fetching referral transactions for user:', user.id);
-
       const { data, error } = await supabase
         .from('referral_transactions')
         .select('*')
@@ -54,15 +47,8 @@ export const useReferralTransactions = () => {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('❌ [REALTIME] Error fetching referral transactions:', error);
         throw error;
       }
-
-      console.log('✅ [REALTIME] Referral transactions fetched:', {
-        count: data?.length || 0,
-        transactions: data,
-        timestamp: new Date().toISOString()
-      });
       
       // Map the database response to match our ReferralTransaction type
       return (data || []).map(transaction => ({
@@ -71,8 +57,8 @@ export const useReferralTransactions = () => {
       })) as ReferralTransaction[];
     },
     enabled: !!user?.id,
-    // Reduce stale time for more frequent updates
-    staleTime: 1000, // 1 second
-    refetchInterval: 3000, // Refetch every 3 seconds
+    // Optimized caching - less frequent updates
+    staleTime: 1000 * 60 * 2, // 2 minutes
+    refetchInterval: 1000 * 30, // Refetch every 30 seconds instead of 3 seconds
   });
 };

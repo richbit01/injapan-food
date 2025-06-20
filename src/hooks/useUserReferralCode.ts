@@ -9,11 +9,9 @@ export const useUserReferralCode = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   
-  // Enhanced real-time subscription for user referral data
+  // Optimized real-time subscription for user referral data
   useEffect(() => {
     if (!user?.id) return;
-
-    console.log('🔄 [REALTIME] Setting up user referral subscriptions for user:', user.id);
 
     const channel = supabase
       .channel('user-referral-realtime')
@@ -26,7 +24,6 @@ export const useUserReferralCode = () => {
           filter: `user_id=eq.${user.id}`
         },
         (payload) => {
-          console.log('📊 [REALTIME] User referral code update:', payload);
           queryClient.invalidateQueries({ queryKey: ['user-referral-code', user.id] });
         }
       )
@@ -39,7 +36,6 @@ export const useUserReferralCode = () => {
           filter: `referrer_id=eq.${user.id}`
         },
         (payload) => {
-          console.log('💰 [REALTIME] User referral transaction update:', payload);
           queryClient.invalidateQueries({ queryKey: ['user-referral-code', user.id] });
           queryClient.invalidateQueries({ queryKey: ['referral-transactions', user.id] });
         }
@@ -47,7 +43,6 @@ export const useUserReferralCode = () => {
       .subscribe();
 
     return () => {
-      console.log('🔌 [REALTIME] Cleaning up user referral subscriptions');
       supabase.removeChannel(channel);
     };
   }, [user?.id, queryClient]);
@@ -57,8 +52,6 @@ export const useUserReferralCode = () => {
     queryFn: async (): Promise<ReferralCode | null> => {
       if (!user?.id) return null;
 
-      console.log('📊 [REALTIME] Fetching user referral code for:', user.id);
-
       const { data, error } = await supabase
         .from('referral_codes')
         .select('*')
@@ -67,23 +60,14 @@ export const useUserReferralCode = () => {
         .maybeSingle();
 
       if (error) {
-        console.error('❌ [REALTIME] Error fetching referral code:', error);
         throw error;
       }
-
-      console.log('✅ [REALTIME] User referral code fetched:', {
-        hasCode: !!data,
-        code: data?.code,
-        totalUses: data?.total_uses,
-        totalCommission: data?.total_commission_earned,
-        timestamp: new Date().toISOString()
-      });
       
       return data as ReferralCode || null;
     },
     enabled: !!user?.id,
-    // Reduce stale time for more frequent updates
-    staleTime: 1000, // 1 second
-    refetchInterval: 5000, // Refetch every 5 seconds
+    // Optimized caching - less frequent updates
+    staleTime: 1000 * 60 * 3, // 3 minutes
+    refetchInterval: 1000 * 60, // Refetch every 1 minute instead of 5 seconds
   });
 };
