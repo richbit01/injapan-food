@@ -52,7 +52,10 @@ export const useAdminStats = () => {
         outOfStockProducts,
         lowStockProducts,
         totalOrders: ordersCount || 0,
-        criticalStockProducts
+        criticalStockProducts,
+        totalCategories: new Set(productsList.map(p => p.category)).size,
+        pendingOrders: 0,
+        totalRevenue: 0
       };
     },
   });

@@ -87,10 +87,10 @@ export interface Prefecture {
 
 export interface DashboardStats {
   totalProducts: number;
-  activeProducts?: number;
+  activeProducts: number;
   lowStockProducts: Product[];
-  outOfStockProducts?: Product[];
-  criticalStockProducts?: Product[];
+  outOfStockProducts: number;
+  criticalStockProducts: Product[];
   totalCategories: number;
   totalOrders: number;
   pendingOrders: number;
@@ -114,4 +114,19 @@ export interface RecycleBinItem {
   data: any;
   deleted_by: string;
   deleted_at: string;
+}
+
+export interface ReferralTransaction {
+  id: string;
+  referral_code: string;
+  commission_amount: number;
+  order_id: string;
+  order_total: number;
+  referrer_id: string;
+  referred_user_id: string | null;
+  status: 'pending' | 'confirmed' | 'cancelled';
+  created_at: string;
+  updated_at: string;
+  confirmed_at: string | null;
+  confirmed_by: string | null;
 }
