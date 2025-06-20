@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { LogIn } from 'lucide-react';
 import { useCart } from '@/hooks/useCart';
 import { useAuth } from '@/hooks/useAuth';
@@ -17,18 +17,19 @@ interface HeaderProps {
 const Header = ({ shouldAnimateCart = false }: HeaderProps) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { t } = useLanguage();
 
   const isActive = (path: string) => location.pathname === path;
 
-  // Handle navigation with scroll to top
-  const handleNavClick = () => {
+  // Handle navigation with immediate scroll to top
+  const handleNavClick = (path: string) => {
     setIsMenuOpen(false);
-    // Small delay to ensure navigation happens first
-    setTimeout(() => {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }, 100);
+    // Immediately scroll to top
+    window.scrollTo(0, 0);
+    // Navigate programmatically
+    navigate(path);
   };
 
   const navItems = [
@@ -44,7 +45,7 @@ const Header = ({ shouldAnimateCart = false }: HeaderProps) => {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link to="/" onClick={handleNavClick} className="flex items-center space-x-2">
+          <button onClick={() => handleNavClick('/')} className="flex items-center space-x-2 cursor-pointer">
             <div className="w-10 h-10 rounded-lg overflow-hidden">
               <img 
                 src="/lovable-uploads/022a8dd4-6c9e-4b02-82a8-703a2cbfb51a.png" 
@@ -55,23 +56,22 @@ const Header = ({ shouldAnimateCart = false }: HeaderProps) => {
             <div>
               <h1 className="text-xl font-bold text-primary">Injapan Food</h1>
             </div>
-          </Link>
+          </button>
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
             {navItems.map((item) => (
-              <Link
+              <button
                 key={item.path}
-                to={item.path}
-                onClick={handleNavClick}
-                className={`font-medium transition-colors duration-200 ${
+                onClick={() => handleNavClick(item.path)}
+                className={`font-medium transition-colors duration-200 cursor-pointer ${
                   isActive(item.path)
                     ? 'text-primary border-b-2 border-primary'
                     : 'text-gray-700 hover:text-primary'
                 }`}
               >
                 {item.label}
-              </Link>
+              </button>
             ))}
           </nav>
 
@@ -81,25 +81,24 @@ const Header = ({ shouldAnimateCart = false }: HeaderProps) => {
             <LanguageSwitcher />
 
             {/* Cart */}
-            <Link
-              to="/cart"
-              onClick={handleNavClick}
-              className="relative p-2 text-gray-700 hover:text-primary transition-colors duration-200"
+            <button
+              onClick={() => handleNavClick('/cart')}
+              className="relative p-2 text-gray-700 hover:text-primary transition-colors duration-200 cursor-pointer"
               aria-label="Shopping Cart"
             >
               <CartIcon onAnimationTrigger={shouldAnimateCart} />
-            </Link>
+            </button>
 
             {/* Auth */}
             {user ? (
               <UserMenu />
             ) : (
-              <Link to="/auth" onClick={handleNavClick}>
+              <button onClick={() => handleNavClick('/auth')}>
                 <Button variant="outline" size="sm" className="flex items-center space-x-2">
                   <LogIn className="w-4 h-4" />
                   <span className="hidden sm:inline">{t('nav.login')}</span>
                 </Button>
-              </Link>
+              </button>
             )}
 
             {/* Mobile Menu Button */}
@@ -127,27 +126,25 @@ const Header = ({ shouldAnimateCart = false }: HeaderProps) => {
           <div className="md:hidden py-4 border-t border-gray-200 animate-fade-in">
             <nav className="flex flex-col space-y-4">
               {navItems.map((item) => (
-                <Link
+                <button
                   key={item.path}
-                  to={item.path}
-                  onClick={handleNavClick}
-                  className={`font-medium transition-colors duration-200 ${
+                  onClick={() => handleNavClick(item.path)}
+                  className={`font-medium transition-colors duration-200 text-left cursor-pointer ${
                     isActive(item.path)
                       ? 'text-primary'
                       : 'text-gray-700 hover:text-primary'
                   }`}
                 >
                   {item.label}
-                </Link>
+                </button>
               ))}
               {!user && (
-                <Link
-                  to="/auth"
-                  onClick={handleNavClick}
-                  className="text-gray-700 hover:text-primary font-medium"
+                <button
+                  onClick={() => handleNavClick('/auth')}
+                  className="text-gray-700 hover:text-primary font-medium text-left cursor-pointer"
                 >
                   {t('nav.login')} / {t('nav.register')}
-                </Link>
+                </button>
               )}
             </nav>
           </div>
