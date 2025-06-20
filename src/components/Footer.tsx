@@ -1,9 +1,34 @@
-
 import { Link } from 'react-router-dom';
+import { Instagram, MessageCircle } from 'lucide-react';
 import { useLanguage } from '@/hooks/useLanguage';
 
 const Footer = () => {
   const { t } = useLanguage();
+
+  const socialMediaLinks = [
+    {
+      name: 'WhatsApp',
+      url: 'https://wa.me/6285155452259',
+      icon: MessageCircle,
+      color: 'hover:text-green-400'
+    },
+    {
+      name: 'Instagram',
+      url: 'https://instagram.com/injapanfood',
+      icon: Instagram,
+      color: 'hover:text-pink-400'
+    },
+    {
+      name: 'TikTok',
+      url: 'https://tiktok.com/@injapanfood',
+      icon: () => (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-.88-.05A6.33 6.33 0 0 0 5.16 20.5a6.34 6.34 0 0 0 10.86-4.43V7.83a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.26z"/>
+        </svg>
+      ),
+      color: 'hover:text-red-400'
+    }
+  ];
 
   return (
     <footer className="bg-gray-900 text-white">
@@ -21,13 +46,35 @@ const Footer = () => {
               </div>
               <div>
                 <h3 className="text-2xl font-bold">Injapan Food</h3>
-                <p className="text-sm text-gray-400">Makanan Indonesia di Jepang</p>
               </div>
             </div>
             <p className="text-gray-300 mb-6 leading-relaxed max-w-md">
               Menyediakan produk makanan Indonesia berkualitas tinggi untuk komunitas Indonesia di Jepang. 
               Nikmati cita rasa kampung halaman dengan pengiriman ke seluruh Jepang.
             </p>
+            
+            {/* Social Media Section */}
+            <div className="mb-6">
+              <h4 className="text-lg font-semibold mb-4">Ikuti Kami</h4>
+              <div className="flex space-x-4">
+                {socialMediaLinks.map((social) => {
+                  const IconComponent = social.icon;
+                  return (
+                    <a
+                      key={social.name}
+                      href={social.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`p-3 bg-gray-800 rounded-full text-gray-300 transition-all duration-200 transform hover:scale-110 ${social.color}`}
+                      aria-label={`Follow us on ${social.name}`}
+                    >
+                      <IconComponent />
+                    </a>
+                  );
+                })}
+              </div>
+            </div>
+
             <div className="space-y-3">
               <div className="flex items-center text-gray-300 hover:text-white transition-colors">
                 <span className="mr-3 text-lg">📱</span>
