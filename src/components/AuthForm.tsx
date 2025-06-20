@@ -1,52 +1,49 @@
 
 import { useState } from 'react';
-import { useFirebaseAuth } from '@/hooks/useFirebaseAuth';
+import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 const AuthForm = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
-  const { signIn, signUp } = useFirebaseAuth();
+  const { user } = useAuth();
   const { toast } = useToast();
 
-  const getFirebaseErrorMessage = (error: any) => {
+  const getAuthErrorMessage = (error: any) => {
     const errorCode = error?.code || '';
     const errorMessage = error?.message || '';
 
-    // Handle Firebase Auth specific errors
+    // Handle Supabase Auth specific errors
     switch (errorCode) {
-      case 'auth/invalid-credential':
-      case 'auth/wrong-password':
-      case 'auth/user-not-found':
+      case 'invalid_credentials':
+      case 'email_not_confirmed':
         return 'Email atau password yang Anda masukkan salah. Silakan periksa kembali data Anda.';
       
-      case 'auth/invalid-email':
+      case 'invalid_email':
         return 'Format email tidak valid. Silakan masukkan alamat email yang benar.';
       
-      case 'auth/user-disabled':
-        return 'Akun Anda telah dinonaktifkan. Silakan hubungi customer service kami untuk bantuan.';
+      case 'user_not_found':
+        return 'Akun dengan email ini tidak ditemukan. Silakan daftar terlebih dahulu.';
       
-      case 'auth/too-many-requests':
+      case 'too_many_requests':
         return 'Terlalu banyak percobaan login. Silakan coba lagi dalam beberapa menit.';
       
-      case 'auth/network-request-failed':
-        return 'Koneksi internet bermasalah. Silakan periksa koneksi Anda dan coba lagi.';
+      case 'signup_disabled':
+        return 'Pendaftaran akun baru sedang dinonaktifkan. Silakan hubungi customer service.';
       
-      case 'auth/email-already-in-use':
+      case 'email_already_registered':
         return 'Email ini sudah terdaftar. Silakan gunakan email lain atau masuk dengan akun yang sudah ada.';
       
-      case 'auth/weak-password':
+      case 'weak_password':
         return 'Password terlalu lemah. Gunakan minimal 6 karakter dengan kombinasi huruf dan angka.';
-      
-      case 'auth/operation-not-allowed':
-        return 'Metode login ini sedang tidak tersedia. Silakan hubungi customer service kami.';
       
       default:
         // Handle other common error messages
@@ -68,10 +65,15 @@ const AuthForm = () => {
 
     try {
       console.log('Attempting to sign in with email:', email);
-      const { error } = await signIn(email, password);
+      
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
       if (error) {
         console.error('Sign in error:', error);
-        const errorMessage = getFirebaseErrorMessage(error);
+        const errorMessage = getAuthErrorMessage(error);
         
         toast({
           title: "Login Gagal",
@@ -104,10 +106,21 @@ const AuthForm = () => {
 
     try {
       console.log('Attempting to sign up with email:', email);
-      const { error } = await signUp(email, password, fullName);
+      
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: fullName,
+          },
+          emailRedirectTo: `${window.location.origin}/`
+        }
+      });
+
       if (error) {
         console.error('Sign up error:', error);
-        const errorMessage = getFirebaseErrorMessage(error);
+        const errorMessage = getAuthErrorMessage(error);
         
         toast({
           title: "Pendaftaran Gagal",
