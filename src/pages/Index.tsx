@@ -16,7 +16,7 @@ const Index = () => {
   });
   const { t } = useLanguage();
 
-  const featuredProducts = products.slice(0, 6);
+  const featuredProducts = products.slice(0, 8);
 
   // Show error state if there's an error
   if (productsError || categoriesError) {
@@ -54,53 +54,73 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white">
       <Header />
       
-      {/* Hero Section - Optimized for mobile */}
-      <section className="hero-gradient text-white py-12 sm:py-16 md:py-20">
-        <div className="container mx-auto px-4 text-center">
-          <div className="animate-fade-in max-w-4xl mx-auto">
-            <h1 className="text-2xl sm:text-3xl md:text-5xl lg:text-6xl font-bold mb-4 sm:mb-6 leading-tight">
-              {t('hero.title')}<br />
-              <span className="text-secondary">{t('hero.subtitle')}</span>
+      {/* Hero Section - Clean and modern */}
+      <section className="bg-gradient-to-br from-red-600 via-red-700 to-orange-600 text-white">
+        <div className="container mx-auto px-4 py-16 md:py-24">
+          <div className="max-w-4xl mx-auto text-center">
+            <h1 className="text-3xl md:text-6xl font-bold mb-6 leading-tight">
+              Makanan Indonesia Asli<br />
+              <span className="text-yellow-300">di Jepang</span>
             </h1>
-            <p className="text-base sm:text-lg md:text-xl lg:text-2xl mb-6 sm:mb-8 max-w-3xl mx-auto opacity-90 px-2">
-              {t('hero.description')}
+            <p className="text-lg md:text-xl mb-8 opacity-90 max-w-2xl mx-auto leading-relaxed">
+              Nikmati cita rasa Indonesia yang autentik dengan produk berkualitas tinggi, 
+              dikirim langsung ke seluruh Jepang
             </p>
-            <Link
-              to="/products"
-              className="inline-block bg-white text-primary font-bold py-2.5 px-5 sm:py-3 sm:px-6 md:py-4 md:px-8 rounded-lg text-sm sm:text-base md:text-lg hover:bg-gray-100 transition-all duration-200 transform hover:scale-105"
-            >
-              {t('hero.shopNow')}
-            </Link>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link
+                to="/products"
+                className="bg-white text-red-600 font-bold py-4 px-8 rounded-full text-lg hover:bg-gray-100 transition-all duration-200 transform hover:scale-105 shadow-lg"
+              >
+                Belanja Sekarang
+              </Link>
+              <Link
+                to="/how-to-buy"
+                className="border-2 border-white text-white font-bold py-4 px-8 rounded-full text-lg hover:bg-white hover:text-red-600 transition-all duration-200"
+              >
+                Cara Pembelian
+              </Link>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Categories Section - Mobile optimized grid */}
-      <section className="py-8 sm:py-12 md:py-16 bg-white">
+      {/* Categories Section - Clean grid */}
+      <section className="py-16 bg-gray-50">
         <div className="container mx-auto px-4">
-          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-center mb-6 sm:mb-8 md:mb-12">{t('categories.title')}</h2>
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Kategori Produk</h2>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              Temukan berbagai macam produk makanan Indonesia pilihan terbaik
+            </p>
+          </div>
+          
           {categoriesLoading ? (
             <div className="text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
               <p className="text-gray-600">{t('common.loading')}</p>
             </div>
           ) : categories.length > 0 ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3 md:gap-4 max-w-6xl mx-auto">
-              {categories.map((category, index) => (
-                <Link
-                  key={category}
-                  to={`/products?category=${encodeURIComponent(category)}`}
-                  className="bg-gray-50 hover:bg-primary hover:text-white p-3 sm:p-4 md:p-6 rounded-lg text-center transition-all duration-200 transform hover:scale-105 group"
-                >
-                  <div className="text-lg sm:text-xl md:text-2xl mb-1 sm:mb-2">
-                    {['🍿', '🌶️', '🍜', '🧊', '🥬', '🍃'][index % 6]}
-                  </div>
-                  <h3 className="font-medium text-xs sm:text-sm leading-tight">{category}</h3>
-                </Link>
-              ))}
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 max-w-6xl mx-auto">
+              {categories.map((category, index) => {
+                const icons = ['🍿', '🌶️', '🍜', '🧊', '🥬', '🍃'];
+                return (
+                  <Link
+                    key={category}
+                    to={`/products?category=${encodeURIComponent(category)}`}
+                    className="bg-white hover:bg-red-50 hover:border-red-200 p-6 rounded-xl text-center transition-all duration-200 transform hover:scale-105 border border-gray-100 shadow-sm group"
+                  >
+                    <div className="text-3xl mb-3 group-hover:scale-110 transition-transform duration-200">
+                      {icons[index % 6]}
+                    </div>
+                    <h3 className="font-semibold text-gray-800 text-sm leading-tight group-hover:text-red-600 transition-colors">
+                      {category}
+                    </h3>
+                  </Link>
+                );
+              })}
             </div>
           ) : (
             <div className="text-center py-8">
@@ -110,23 +130,40 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Featured Products - Mobile optimized */}
-      <section className="py-8 sm:py-12 md:py-16 bg-gray-50">
+      {/* Featured Products - Clean layout */}
+      <section className="py-16 bg-white">
         <div className="container mx-auto px-4">
-          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-center mb-6 sm:mb-8 md:mb-12">{t('products.featured')}</h2>
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Produk Pilihan</h2>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              Produk terlaris dan terpopuler dari koleksi kami
+            </p>
+          </div>
+          
           {productsLoading ? (
             <div className="text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
               <p className="text-gray-600">{t('products.loading')}</p>
             </div>
           ) : featuredProducts.length > 0 ? (
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6 max-w-7xl mx-auto">
-              {featuredProducts.map((product) => (
-                <div key={product.id} className="w-full">
-                  <ProductCard product={product} />
-                </div>
-              ))}
-            </div>
+            <>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 max-w-7xl mx-auto mb-12">
+                {featuredProducts.map((product) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+              </div>
+              <div className="text-center">
+                <Link
+                  to="/products"
+                  className="inline-flex items-center bg-red-600 text-white font-semibold py-3 px-8 rounded-full hover:bg-red-700 transition-all duration-200 transform hover:scale-105"
+                >
+                  Lihat Semua Produk
+                  <svg className="ml-2 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </Link>
+              </div>
+            </>
           ) : (
             <div className="text-center py-12">
               <div className="text-6xl mb-4">📦</div>
@@ -134,61 +171,78 @@ const Index = () => {
               <p className="text-gray-600">{t('products.comingSoon')}</p>
             </div>
           )}
-          {featuredProducts.length > 0 && (
-            <div className="text-center mt-6 sm:mt-8 md:mt-12">
-              <Link
-                to="/products"
-                className="btn-primary inline-block"
-              >
-                {t('products.viewAll')}
-              </Link>
-            </div>
-          )}
         </div>
       </section>
 
-      {/* Why Choose Us - Mobile optimized */}
-      <section className="py-8 sm:py-12 md:py-16 bg-white">
+      {/* Why Choose Us - Modern cards */}
+      <section className="py-16 bg-gray-50">
         <div className="container mx-auto px-4">
-          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-center mb-6 sm:mb-8 md:mb-12">{t('whyChoose.title')}</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 md:gap-8 max-w-5xl mx-auto">
-            <div className="text-center p-3 sm:p-4 md:p-6">
-              <div className="text-3xl sm:text-4xl md:text-5xl mb-2 sm:mb-3 md:mb-4">🚚</div>
-              <h3 className="text-base sm:text-lg md:text-xl font-semibold mb-2 md:mb-3">{t('whyChoose.fastDelivery')}</h3>
-              <p className="text-gray-600 text-sm md:text-base">{t('whyChoose.fastDeliveryDesc')}</p>
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Mengapa Pilih Kami?</h2>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              Komitmen kami untuk memberikan yang terbaik bagi Anda
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+            <div className="bg-white p-8 rounded-xl text-center shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200">
+              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <span className="text-2xl">🚚</span>
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-4">Pengiriman Cepat</h3>
+              <p className="text-gray-600 leading-relaxed">
+                Pengiriman ke seluruh Jepang dengan waktu yang terjamin dan kemasan yang aman
+              </p>
             </div>
-            <div className="text-center p-3 sm:p-4 md:p-6">
-              <div className="text-3xl sm:text-4xl md:text-5xl mb-2 sm:mb-3 md:mb-4">✅</div>
-              <h3 className="text-base sm:text-lg md:text-xl font-semibold mb-2 md:mb-3">{t('whyChoose.qualityGuaranteed')}</h3>
-              <p className="text-gray-600 text-sm md:text-base">{t('whyChoose.qualityGuaranteedDesc')}</p>
+            
+            <div className="bg-white p-8 rounded-xl text-center shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <span className="text-2xl">✅</span>
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-4">Kualitas Terjamin</h3>
+              <p className="text-gray-600 leading-relaxed">
+                Produk berkualitas tinggi dengan rasa autentik Indonesia yang terjaga
+              </p>
             </div>
-            <div className="text-center p-3 sm:p-4 md:p-6">
-              <div className="text-3xl sm:text-4xl md:text-5xl mb-2 sm:mb-3 md:mb-4">💬</div>
-              <h3 className="text-base sm:text-lg md:text-xl font-semibold mb-2 md:mb-3">{t('whyChoose.support247')}</h3>
-              <p className="text-gray-600 text-sm md:text-base">{t('whyChoose.support247Desc')}</p>
+            
+            <div className="bg-white p-8 rounded-xl text-center shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-200">
+              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <span className="text-2xl">💬</span>
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-4">Layanan 24/7</h3>
+              <p className="text-gray-600 leading-relaxed">
+                Tim customer service yang siap membantu Anda kapan saja melalui WhatsApp
+              </p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* CTA Section - Mobile optimized */}
-      <section className="py-8 sm:py-12 md:py-16 bg-accent text-white">
+      {/* CTA Section - Simple and effective */}
+      <section className="py-16 bg-red-600 text-white">
         <div className="container mx-auto px-4 text-center">
-          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-3 sm:mb-4 md:mb-6">{t('cta.title')}</h2>
-          <p className="text-base sm:text-lg md:text-xl mb-4 sm:mb-6 md:mb-8 max-w-2xl mx-auto px-2">{t('cta.description')}</p>
-          <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center max-w-md mx-auto">
-            <Link
-              to="/products"
-              className="btn-secondary inline-block"
-            >
-              {t('cta.startShopping')}
-            </Link>
-            <Link
-              to="/how-to-buy"
-              className="bg-white text-accent hover:bg-gray-100 px-4 md:px-6 py-2 md:py-3 rounded-lg font-medium transition-all duration-200"
-            >
-              {t('cta.howToBuy')}
-            </Link>
+          <div className="max-w-3xl mx-auto">
+            <h2 className="text-3xl md:text-4xl font-bold mb-6">
+              Siap Merasakan Cita Rasa Indonesia?
+            </h2>
+            <p className="text-xl mb-8 opacity-90 leading-relaxed">
+              Bergabunglah dengan ribuan pelanggan yang sudah mempercayai kami 
+              untuk kebutuhan makanan Indonesia di Jepang
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link
+                to="/products"
+                className="bg-white text-red-600 font-bold py-4 px-8 rounded-full text-lg hover:bg-gray-100 transition-all duration-200 transform hover:scale-105"
+              >
+                Mulai Belanja
+              </Link>
+              <Link
+                to="/how-to-buy"
+                className="border-2 border-white text-white font-bold py-4 px-8 rounded-full text-lg hover:bg-white hover:text-red-600 transition-all duration-200"
+              >
+                Pelajari Lebih Lanjut
+              </Link>
+            </div>
           </div>
         </div>
       </section>
