@@ -18,7 +18,7 @@ const checkoutSchema = z.object({
   whatsapp: z.string().min(10, 'Nomor WhatsApp tidak valid').regex(/^[0-9+\-\s]+$/, 'Format nomor tidak valid'),
   email: z.string().email('Format email tidak valid'),
   prefecture: z.string().min(1, 'Silakan pilih prefektur'),
-  city: z.string().min(2, 'Nama kota/kabupaten harus minimal 2 karakter'),
+  city: z.string().min(2, 'Area/Kota/Cho/Machi harus minimal 2 karakter'),
   postalCode: z.string().min(7, 'Kode pos harus 7 digit').max(7, 'Kode pos harus 7 digit').regex(/^[0-9]{7}$/, 'Kode pos harus berupa 7 angka'),
   address: z.string().min(10, 'Alamat lengkap harus minimal 10 karakter'),
   notes: z.string().optional(),
@@ -67,7 +67,7 @@ Nama penerima: ${data.fullName}
 Nomor WhatsApp: ${data.whatsapp}
 Email: ${data.email}
 Prefektur: ${data.prefecture}
-Kota/Kabupaten: ${data.city}
+Area/Kota/Cho/Machi: ${data.city}
 Kode Pos: ${data.postalCode}
 Alamat lengkap: ${data.address}
 
@@ -206,9 +206,9 @@ Mohon konfirmasi pesanan saya. Terima kasih banyak! 🙏`;
               name="city"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Kota/Kabupaten *</FormLabel>
+                  <FormLabel>Area/Kota/Cho/Machi *</FormLabel>
                   <FormControl>
-                    <Input placeholder="Masukkan nama kota/kabupaten" {...field} />
+                    <Input placeholder="Contoh: Shibuya-ku, Harajuku" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
