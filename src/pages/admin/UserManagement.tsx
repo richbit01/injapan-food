@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -46,6 +45,7 @@ const UserManagement = () => {
         id: user.id,
         firebase_uid: user.firebase_uid || '',
         full_name: user.full_name || '',
+        // Ensure role is always 'admin' or 'user', never null or empty string
         role: (user.role === 'admin' ? 'admin' : 'user') as 'admin' | 'user',
         created_at: user.created_at,
         updated_at: user.updated_at
