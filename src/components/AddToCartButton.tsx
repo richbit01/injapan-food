@@ -102,25 +102,25 @@ const AddToCartButton = ({
         className="flex items-center space-x-2 relative z-10"
         animate={isAdded ? { x: 0 } : { x: 0 }}
       >
-        {/* Enhanced cart icon with plus indicator */}
+        {/* Enhanced cart icon with plus indicator - smaller size */}
         <motion.div
           className="relative"
           animate={isAdded ? { rotate: 360, scale: [1, 1.3, 1] } : { rotate: 0, scale: 1 }}
           transition={{ duration: 0.6, ease: "easeInOut" }}
         >
           {isAdded ? (
-            <Check className="w-4 h-4" />
+            <Check className="w-3.5 h-3.5" />
           ) : (
             <div className="relative">
-              <ShoppingCart className="w-4 h-4 group-hover:animate-bounce" />
+              <ShoppingCart className="w-3.5 h-3.5 group-hover:animate-bounce" />
               {!isOutOfStock && (
                 <motion.div
-                  className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-yellow-400 rounded-full flex items-center justify-center"
+                  className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-yellow-400 rounded-full flex items-center justify-center"
                   initial={{ scale: 0 }}
                   animate={{ scale: [0, 1.2, 1] }}
                   transition={{ duration: 0.3, delay: 0.1 }}
                 >
-                  <Plus className="w-1.5 h-1.5 text-red-600" strokeWidth={3} />
+                  <Plus className="w-1 h-1 text-red-600" strokeWidth={3} />
                 </motion.div>
               )}
             </div>
