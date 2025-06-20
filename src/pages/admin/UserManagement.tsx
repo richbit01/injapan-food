@@ -1,57 +1,68 @@
+
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/useFirebaseAuth';
 import { toast } from '@/hooks/use-toast';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Users, Shield, User as UserIcon, RefreshCw } from 'lucide-react';
 
 interface UserProfile {
-  id: string;
-  firebase_uid: string;
-  full_name: string;
+  uid: string;
+  email: string;
+  displayName: string;
   role: 'admin' | 'user';
-  created_at: string;
-  updated_at: string;
+  createdAt: string;
+  lastLogin: string;
 }
 
 const UserManagement = () => {
   const { user } = useAuth();
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
-  const [updating, setUpdating] = useState<string | null>(null);
 
   const fetchUsers = async () => {
     try {
-      console.log('Fetching all user profiles...');
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('Error fetching users:', error);
-        throw error;
-      }
-
-      console.log('Fetched users:', data);
+      console.log('Firebase does not provide direct user management API');
+      console.log('For production, you would need Firebase Admin SDK on backend');
       
-      // Type the data properly to match UserProfile interface
-      const typedUsers: UserProfile[] = (data || []).map(user => ({
-        id: user.id,
-        firebase_uid: user.firebase_uid || '',
-        full_name: user.full_name || '',
-        // Ensure role is always 'admin' or 'user', never null or empty string
-        role: (user.role === 'admin' ? 'admin' : 'user') as 'admin' | 'user',
-        created_at: user.created_at,
-        updated_at: user.updated_at
-      }));
+      // For demo purposes, create mock data based on current user
+      const mockUsers: UserProfile[] = [
+        {
+          uid: user?.uid || 'demo-1',
+          email: user?.email || 'admin@gmail.com',
+          displayName: user?.displayName || 'Admin User',
+          role: 'admin',
+          createdAt: new Date().toISOString(),
+          lastLogin: new Date().toISOString()
+        },
+        {
+          uid: 'demo-2',
+          email: 'ari4rich@gmail.com',
+          displayName: 'Ari',
+          role: 'admin',
+          createdAt: new Date(Date.now() - 86400000).toISOString(),
+          lastLogin: new Date(Date.now() - 3600000).toISOString()
+        },
+        {
+          uid: 'demo-3',
+          email: 'user@example.com',
+          displayName: 'Regular User',
+          role: 'user',
+          createdAt: new Date(Date.now() - 172800000).toISOString(),
+          lastLogin: new Date(Date.now() - 7200000).toISOString()
+        }
+      ];
       
-      setUsers(typedUsers);
+      setUsers(mockUsers);
+      
+      toast({
+        title: "Info",
+        description: "Menampilkan data demo. Untuk production, gunakan Firebase Admin SDK di backend.",
+        variant: "default"
+      });
     } catch (error) {
       console.error('Error in fetchUsers:', error);
       toast({
@@ -66,55 +77,7 @@ const UserManagement = () => {
 
   useEffect(() => {
     fetchUsers();
-  }, []);
-
-  const updateUserRole = async (userId: string, newRole: 'admin' | 'user') => {
-    if (!user) return;
-
-    setUpdating(userId);
-    
-    try {
-      console.log(`Updating user ${userId} role to ${newRole}`);
-      
-      const { error } = await supabase
-        .from('profiles')
-        .update({ 
-          role: newRole,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', userId);
-
-      if (error) {
-        console.error('Error updating user role:', error);
-        throw error;
-      }
-
-      // Update local state
-      setUsers(prevUsers => 
-        prevUsers.map(u => 
-          u.id === userId 
-            ? { ...u, role: newRole, updated_at: new Date().toISOString() }
-            : u
-        )
-      );
-
-      toast({
-        title: "Berhasil!",
-        description: `Role pengguna berhasil diubah menjadi ${newRole}`,
-      });
-
-      console.log('User role updated successfully');
-    } catch (error) {
-      console.error('Error updating user role:', error);
-      toast({
-        title: "Error",
-        description: "Gagal mengubah role pengguna",
-        variant: "destructive"
-      });
-    } finally {
-      setUpdating(null);
-    }
-  };
+  }, [user]);
 
   const getRoleBadgeVariant = (role: string) => {
     return role === 'admin' ? 'destructive' : 'secondary';
@@ -134,8 +97,16 @@ const UserManagement = () => {
     });
   };
 
-  const currentUserRole = users.find(u => u.id === user?.id)?.role;
+  const currentUserRole = users.find(u => u.uid === user?.uid)?.role;
   const canEditRoles = currentUserRole === 'admin';
+
+  const handleRoleUpdate = (userId: string, newRole: 'admin' | 'user') => {
+    toast({
+      title: "Firebase Limitation",
+      description: "Role management requires Firebase Admin SDK on backend server",
+      variant: "default"
+    });
+  };
 
   return (
     <AdminLayout>
@@ -145,13 +116,21 @@ const UserManagement = () => {
             <Users className="w-8 h-8 text-blue-600" />
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Kelola Pengguna</h1>
-              <p className="text-gray-600">Manage user roles dan permissions</p>
+              <p className="text-gray-600">Manage user roles dan permissions (Demo Mode)</p>
             </div>
           </div>
           <Button onClick={fetchUsers} variant="outline" disabled={loading}>
             <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
+        </div>
+
+        <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <p className="text-blue-800 text-sm">
+            <Shield className="w-4 h-4 inline mr-2" />
+            <strong>Firebase Auth Note:</strong> User management dengan Firebase memerlukan Firebase Admin SDK di backend server. 
+            Saat ini menampilkan data demo untuk tujuan UI testing.
+          </p>
         </div>
 
         <Card>
@@ -176,35 +155,38 @@ const UserManagement = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Nama Lengkap</TableHead>
+                      <TableHead>Nama & Email</TableHead>
                       <TableHead>User ID</TableHead>
                       <TableHead>Role</TableHead>
                       <TableHead>Bergabung</TableHead>
-                      <TableHead>Terakhir Update</TableHead>
+                      <TableHead>Login Terakhir</TableHead>
                       {canEditRoles && <TableHead>Aksi</TableHead>}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {users.map((userProfile) => {
                       const RoleIcon = getRoleIcon(userProfile.role);
-                      const isCurrentUser = userProfile.id === user?.id;
+                      const isCurrentUser = userProfile.uid === user?.uid;
                       
                       return (
-                        <TableRow key={userProfile.id}>
+                        <TableRow key={userProfile.uid}>
                           <TableCell>
                             <div className="flex items-center space-x-2">
                               <RoleIcon className="w-4 h-4" />
-                              <span className="font-medium">
-                                {userProfile.full_name || 'Tidak ada nama'}
-                                {isCurrentUser && (
-                                  <span className="text-blue-600 text-xs ml-2">(Anda)</span>
-                                )}
-                              </span>
+                              <div>
+                                <p className="font-medium">
+                                  {userProfile.displayName || 'Tidak ada nama'}
+                                  {isCurrentUser && (
+                                    <span className="text-blue-600 text-xs ml-2">(Anda)</span>
+                                  )}
+                                </p>
+                                <p className="text-sm text-gray-500">{userProfile.email}</p>
+                              </div>
                             </div>
                           </TableCell>
                           <TableCell>
                             <code className="text-xs bg-gray-100 px-2 py-1 rounded">
-                              {userProfile.id}
+                              {userProfile.uid.substring(0, 8)}...
                             </code>
                           </TableCell>
                           <TableCell>
@@ -213,10 +195,10 @@ const UserManagement = () => {
                             </Badge>
                           </TableCell>
                           <TableCell className="text-sm text-gray-600">
-                            {formatDate(userProfile.created_at)}
+                            {formatDate(userProfile.createdAt)}
                           </TableCell>
                           <TableCell className="text-sm text-gray-600">
-                            {formatDate(userProfile.updated_at)}
+                            {formatDate(userProfile.lastLogin)}
                           </TableCell>
                           {canEditRoles && (
                             <TableCell>
@@ -225,27 +207,13 @@ const UserManagement = () => {
                                   Tidak bisa mengubah role sendiri
                                 </span>
                               ) : (
-                                <Select
-                                  value={userProfile.role}
-                                  onValueChange={(newRole: 'admin' | 'user') => 
-                                    updateUserRole(userProfile.id, newRole)
-                                  }
-                                  disabled={updating === userProfile.id}
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleRoleUpdate(userProfile.uid, userProfile.role === 'admin' ? 'user' : 'admin')}
                                 >
-                                  <SelectTrigger className="w-32">
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="user">User</SelectItem>
-                                    <SelectItem value="admin">Admin</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              )}
-                              {updating === userProfile.id && (
-                                <div className="flex items-center mt-1">
-                                  <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mr-2"></div>
-                                  <span className="text-xs text-gray-500">Updating...</span>
-                                </div>
+                                  Toggle Role (Demo)
+                                </Button>
                               )}
                             </TableCell>
                           )}

@@ -18,7 +18,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
       if (user) {
         console.log('Checking admin status for user:', user.email);
         
-        // Check if user is admin based on email or custom claims
+        // Check if user is admin based on email
         const adminEmails = ['admin@gmail.com', 'ari4rich@gmail.com'];
         const userIsAdmin = adminEmails.includes(user.email || '');
         
