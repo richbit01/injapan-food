@@ -1,8 +1,7 @@
 
 import { Navigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/useFirebaseAuth';
 import { useEffect, useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import AdminSidebar from './AdminSidebar';
 
 interface AdminLayoutProps {
@@ -15,27 +14,16 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const checkAdminStatus = async () => {
+    const checkAdminStatus = () => {
       if (user) {
-        console.log('Checking admin status for user:', user.id);
+        console.log('Checking admin status for user:', user.email);
         
-        // Check admin status using user id - use maybeSingle to avoid errors
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', user.id)
-          .maybeSingle();
+        // Check if user is admin based on email or custom claims
+        const adminEmails = ['admin@gmail.com', 'ari4rich@gmail.com'];
+        const userIsAdmin = adminEmails.includes(user.email || '');
         
-        if (error) {
-          console.error('Error checking admin status:', error);
-          setIsAdmin(false);
-        } else if (data) {
-          console.log('Admin check result:', data);
-          setIsAdmin(data.role === 'admin');
-        } else {
-          console.log('No profile found for user');
-          setIsAdmin(false);
-        }
+        console.log('Admin check result:', userIsAdmin);
+        setIsAdmin(userIsAdmin);
       }
       setLoading(false);
     };

@@ -1,60 +1,46 @@
 
 import { useState } from 'react';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/useFirebaseAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 
 const AuthForm = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
-  const { user } = useAuth();
+  const { signIn, signUp } = useAuth();
   const { toast } = useToast();
 
-  const getAuthErrorMessage = (error: any) => {
+  const getFirebaseErrorMessage = (error: any) => {
     const errorCode = error?.code || '';
-    const errorMessage = error?.message || '';
-
-    // Handle Supabase Auth specific errors
+    
     switch (errorCode) {
-      case 'invalid_credentials':
-      case 'email_not_confirmed':
+      case 'auth/invalid-credential':
+      case 'auth/wrong-password':
+      case 'auth/user-not-found':
         return 'Email atau password yang Anda masukkan salah. Silakan periksa kembali data Anda.';
       
-      case 'invalid_email':
+      case 'auth/invalid-email':
         return 'Format email tidak valid. Silakan masukkan alamat email yang benar.';
       
-      case 'user_not_found':
-        return 'Akun dengan email ini tidak ditemukan. Silakan daftar terlebih dahulu.';
+      case 'auth/user-disabled':
+        return 'Akun Anda telah dinonaktifkan. Silakan hubungi customer service.';
       
-      case 'too_many_requests':
+      case 'auth/too-many-requests':
         return 'Terlalu banyak percobaan login. Silakan coba lagi dalam beberapa menit.';
       
-      case 'signup_disabled':
-        return 'Pendaftaran akun baru sedang dinonaktifkan. Silakan hubungi customer service.';
-      
-      case 'email_already_registered':
+      case 'auth/email-already-in-use':
         return 'Email ini sudah terdaftar. Silakan gunakan email lain atau masuk dengan akun yang sudah ada.';
       
-      case 'weak_password':
+      case 'auth/weak-password':
         return 'Password terlalu lemah. Gunakan minimal 6 karakter dengan kombinasi huruf dan angka.';
       
       default:
-        // Handle other common error messages
-        if (errorMessage.includes('Invalid login credentials')) {
-          return 'Email atau password yang Anda masukkan salah. Silakan periksa kembali data Anda.';
-        } else if (errorMessage.includes('email_address_invalid')) {
-          return 'Format email tidak valid. Silakan masukkan alamat email yang benar.';
-        } else if (errorMessage.includes('Email address')) {
-          return 'Alamat email tidak valid atau tidak terdaftar dalam sistem kami.';
-        }
-        
         return 'Terjadi kesalahan pada sistem. Silakan coba lagi atau hubungi customer service kami jika masalah berlanjut.';
     }
   };
@@ -64,16 +50,10 @@ const AuthForm = () => {
     setLoading(true);
 
     try {
-      console.log('Attempting to sign in with email:', email);
-      
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      const { error } = await signIn(email, password);
 
       if (error) {
-        console.error('Sign in error:', error);
-        const errorMessage = getAuthErrorMessage(error);
+        const errorMessage = getFirebaseErrorMessage(error);
         
         toast({
           title: "Login Gagal",
@@ -85,14 +65,13 @@ const AuthForm = () => {
           title: "Login Berhasil",
           description: "Selamat datang! Anda berhasil masuk ke akun Anda.",
         });
-        // Redirect will be handled by the auth state change
         window.location.href = '/';
       }
     } catch (error) {
-      console.error('Sign in catch error:', error);
+      console.error('Sign in error:', error);
       toast({
         title: "Login Gagal",
-        description: "Terjadi kesalahan pada sistem. Silakan coba lagi atau hubungi customer service kami.",
+        description: "Terjadi kesalahan pada sistem. Silakan coba lagi.",
         variant: "destructive",
       });
     } finally {
@@ -105,22 +84,10 @@ const AuthForm = () => {
     setLoading(true);
 
     try {
-      console.log('Attempting to sign up with email:', email);
-      
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            full_name: fullName,
-          },
-          emailRedirectTo: `${window.location.origin}/`
-        }
-      });
+      const { error } = await signUp(email, password, fullName);
 
       if (error) {
-        console.error('Sign up error:', error);
-        const errorMessage = getAuthErrorMessage(error);
+        const errorMessage = getFirebaseErrorMessage(error);
         
         toast({
           title: "Pendaftaran Gagal",
@@ -132,16 +99,18 @@ const AuthForm = () => {
           title: "Pendaftaran Berhasil",
           description: "Akun Anda berhasil dibuat! Selamat datang di Injapan Food.",
         });
-        // Clear form and switch to sign in tab
+        // Clear form
         setEmail('');
         setPassword('');
         setFullName('');
+        // Redirect to home
+        window.location.href = '/';
       }
     } catch (error) {
-      console.error('Sign up catch error:', error);
+      console.error('Sign up error:', error);
       toast({
         title: "Pendaftaran Gagal",
-        description: "Terjadi kesalahan pada sistem. Silakan coba lagi atau hubungi customer service kami.",
+        description: "Terjadi kesalahan pada sistem. Silakan coba lagi.",
         variant: "destructive",
       });
     } finally {

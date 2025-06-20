@@ -1,6 +1,6 @@
 
 import AuthForm from '@/components/AuthForm';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/useFirebaseAuth';
 import { useEffect } from 'react';
 
 const Auth = () => {

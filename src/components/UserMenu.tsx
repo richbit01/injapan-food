@@ -1,9 +1,8 @@
 
 import { LogOut, User, ShoppingBag, Settings, Percent } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/useFirebaseAuth';
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,27 +19,14 @@ const UserMenu = () => {
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    const checkAdminStatus = async () => {
+    // For Firebase, you can check admin status based on custom claims or a separate admin list
+    // For now, we'll set a simple check - you can modify this based on your needs
+    const checkAdminStatus = () => {
       if (user) {
-        console.log('UserMenu: Checking admin status for user:', user.id);
-        
-        // Check admin status using user id
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', user.id)
-          .maybeSingle();
-        
-        if (error) {
-          console.error('UserMenu: Error checking admin status:', error);
-          setIsAdmin(false);
-        } else if (data) {
-          console.log('UserMenu: Admin check result:', data);
-          setIsAdmin(data.role === 'admin');
-        } else {
-          console.log('UserMenu: No profile found for user');
-          setIsAdmin(false);
-        }
+        // You can implement custom claims or check against a list of admin emails
+        // For demo purposes, let's check if email contains 'admin'
+        const adminEmails = ['admin@gmail.com', 'ari4rich@gmail.com'];
+        setIsAdmin(adminEmails.includes(user.email || ''));
       }
     };
 
@@ -78,7 +64,7 @@ const UserMenu = () => {
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuLabel>
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium">User</p>
+            <p className="text-sm font-medium">{user.displayName || 'User'}</p>
             <p className="text-xs text-muted-foreground">{user.email}</p>
           </div>
         </DropdownMenuLabel>
