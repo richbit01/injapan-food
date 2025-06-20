@@ -65,6 +65,7 @@ function App() {
               <Route path="/admin/products" element={<ProductsList />} />
               <Route path="/admin/add-product" element={<AddProduct />} />
               <Route path="/admin/edit-product/:id" element={<EditProduct />} />
+              <Route path="/admin/products/edit/:id" element={<EditProduct />} />
               <Route path="/admin/orders-history" element={<OrdersHistory />} />
               <Route path="/admin/order-confirmation" element={<OrderConfirmation />} />
               <Route path="/admin/referral" element={<ReferralPanel />} />
