@@ -57,20 +57,20 @@ const Index = () => {
     <div className="min-h-screen bg-gray-50">
       <Header />
       
-      {/* Hero Section */}
-      <section className="hero-gradient text-white py-16 md:py-20">
+      {/* Hero Section - Optimized for mobile */}
+      <section className="hero-gradient text-white py-12 sm:py-16 md:py-20">
         <div className="container mx-auto px-4 text-center">
           <div className="animate-fade-in max-w-4xl mx-auto">
-            <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
+            <h1 className="text-2xl sm:text-3xl md:text-5xl lg:text-6xl font-bold mb-4 sm:mb-6 leading-tight">
               {t('hero.title')}<br />
               <span className="text-secondary">{t('hero.subtitle')}</span>
             </h1>
-            <p className="text-lg md:text-xl lg:text-2xl mb-8 max-w-3xl mx-auto opacity-90">
+            <p className="text-base sm:text-lg md:text-xl lg:text-2xl mb-6 sm:mb-8 max-w-3xl mx-auto opacity-90 px-2">
               {t('hero.description')}
             </p>
             <Link
               to="/products"
-              className="inline-block bg-white text-primary font-bold py-3 px-6 md:py-4 md:px-8 rounded-lg text-base md:text-lg hover:bg-gray-100 transition-all duration-200 transform hover:scale-105"
+              className="inline-block bg-white text-primary font-bold py-2.5 px-5 sm:py-3 sm:px-6 md:py-4 md:px-8 rounded-lg text-sm sm:text-base md:text-lg hover:bg-gray-100 transition-all duration-200 transform hover:scale-105"
             >
               {t('hero.shopNow')}
             </Link>
@@ -78,27 +78,27 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Categories Section */}
-      <section className="py-12 md:py-16 bg-white">
+      {/* Categories Section - Mobile optimized grid */}
+      <section className="py-8 sm:py-12 md:py-16 bg-white">
         <div className="container mx-auto px-4">
-          <h2 className="text-2xl md:text-3xl font-bold text-center mb-8 md:mb-12">{t('categories.title')}</h2>
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-center mb-6 sm:mb-8 md:mb-12">{t('categories.title')}</h2>
           {categoriesLoading ? (
             <div className="text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
               <p className="text-gray-600">{t('common.loading')}</p>
             </div>
           ) : categories.length > 0 ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4 max-w-6xl mx-auto">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3 md:gap-4 max-w-6xl mx-auto">
               {categories.map((category, index) => (
                 <Link
                   key={category}
                   to={`/products?category=${encodeURIComponent(category)}`}
-                  className="bg-gray-50 hover:bg-primary hover:text-white p-4 md:p-6 rounded-lg text-center transition-all duration-200 transform hover:scale-105 group"
+                  className="bg-gray-50 hover:bg-primary hover:text-white p-3 sm:p-4 md:p-6 rounded-lg text-center transition-all duration-200 transform hover:scale-105 group"
                 >
-                  <div className="text-xl md:text-2xl mb-2">
+                  <div className="text-lg sm:text-xl md:text-2xl mb-1 sm:mb-2">
                     {['🍿', '🌶️', '🍜', '🧊', '🥬', '🍃'][index % 6]}
                   </div>
-                  <h3 className="font-medium text-xs md:text-sm leading-tight">{category}</h3>
+                  <h3 className="font-medium text-xs sm:text-sm leading-tight">{category}</h3>
                 </Link>
               ))}
             </div>
@@ -110,17 +110,17 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Featured Products */}
-      <section className="py-12 md:py-16 bg-gray-50">
+      {/* Featured Products - Mobile optimized */}
+      <section className="py-8 sm:py-12 md:py-16 bg-gray-50">
         <div className="container mx-auto px-4">
-          <h2 className="text-2xl md:text-3xl font-bold text-center mb-8 md:mb-12">{t('products.featured')}</h2>
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-center mb-6 sm:mb-8 md:mb-12">{t('products.featured')}</h2>
           {productsLoading ? (
             <div className="text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
               <p className="text-gray-600">{t('products.loading')}</p>
             </div>
           ) : featuredProducts.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 max-w-7xl mx-auto">
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6 max-w-7xl mx-auto">
               {featuredProducts.map((product) => (
                 <div key={product.id} className="w-full">
                   <ProductCard product={product} />
@@ -135,7 +135,7 @@ const Index = () => {
             </div>
           )}
           {featuredProducts.length > 0 && (
-            <div className="text-center mt-8 md:mt-12">
+            <div className="text-center mt-6 sm:mt-8 md:mt-12">
               <Link
                 to="/products"
                 className="btn-primary inline-block"
@@ -147,35 +147,35 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Why Choose Us */}
-      <section className="py-12 md:py-16 bg-white">
+      {/* Why Choose Us - Mobile optimized */}
+      <section className="py-8 sm:py-12 md:py-16 bg-white">
         <div className="container mx-auto px-4">
-          <h2 className="text-2xl md:text-3xl font-bold text-center mb-8 md:mb-12">{t('whyChoose.title')}</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 max-w-5xl mx-auto">
-            <div className="text-center p-4 md:p-6">
-              <div className="text-4xl md:text-5xl mb-3 md:mb-4">🚚</div>
-              <h3 className="text-lg md:text-xl font-semibold mb-2 md:mb-3">{t('whyChoose.fastDelivery')}</h3>
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-center mb-6 sm:mb-8 md:mb-12">{t('whyChoose.title')}</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 md:gap-8 max-w-5xl mx-auto">
+            <div className="text-center p-3 sm:p-4 md:p-6">
+              <div className="text-3xl sm:text-4xl md:text-5xl mb-2 sm:mb-3 md:mb-4">🚚</div>
+              <h3 className="text-base sm:text-lg md:text-xl font-semibold mb-2 md:mb-3">{t('whyChoose.fastDelivery')}</h3>
               <p className="text-gray-600 text-sm md:text-base">{t('whyChoose.fastDeliveryDesc')}</p>
             </div>
-            <div className="text-center p-4 md:p-6">
-              <div className="text-4xl md:text-5xl mb-3 md:mb-4">✅</div>
-              <h3 className="text-lg md:text-xl font-semibold mb-2 md:mb-3">{t('whyChoose.qualityGuaranteed')}</h3>
+            <div className="text-center p-3 sm:p-4 md:p-6">
+              <div className="text-3xl sm:text-4xl md:text-5xl mb-2 sm:mb-3 md:mb-4">✅</div>
+              <h3 className="text-base sm:text-lg md:text-xl font-semibold mb-2 md:mb-3">{t('whyChoose.qualityGuaranteed')}</h3>
               <p className="text-gray-600 text-sm md:text-base">{t('whyChoose.qualityGuaranteedDesc')}</p>
             </div>
-            <div className="text-center p-4 md:p-6">
-              <div className="text-4xl md:text-5xl mb-3 md:mb-4">💬</div>
-              <h3 className="text-lg md:text-xl font-semibold mb-2 md:mb-3">{t('whyChoose.support247')}</h3>
+            <div className="text-center p-3 sm:p-4 md:p-6">
+              <div className="text-3xl sm:text-4xl md:text-5xl mb-2 sm:mb-3 md:mb-4">💬</div>
+              <h3 className="text-base sm:text-lg md:text-xl font-semibold mb-2 md:mb-3">{t('whyChoose.support247')}</h3>
               <p className="text-gray-600 text-sm md:text-base">{t('whyChoose.support247Desc')}</p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-12 md:py-16 bg-accent text-white">
+      {/* CTA Section - Mobile optimized */}
+      <section className="py-8 sm:py-12 md:py-16 bg-accent text-white">
         <div className="container mx-auto px-4 text-center">
-          <h2 className="text-2xl md:text-3xl font-bold mb-4 md:mb-6">{t('cta.title')}</h2>
-          <p className="text-lg md:text-xl mb-6 md:mb-8 max-w-2xl mx-auto">{t('cta.description')}</p>
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-3 sm:mb-4 md:mb-6">{t('cta.title')}</h2>
+          <p className="text-base sm:text-lg md:text-xl mb-4 sm:mb-6 md:mb-8 max-w-2xl mx-auto px-2">{t('cta.description')}</p>
           <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center max-w-md mx-auto">
             <Link
               to="/products"

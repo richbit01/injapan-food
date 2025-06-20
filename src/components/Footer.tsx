@@ -6,11 +6,11 @@ const Footer = () => {
   const { t } = useLanguage();
 
   return (
-    <footer className="bg-gray-900 text-white py-8 md:py-12">
+    <footer className="bg-gray-900 text-white py-6 sm:py-8 md:py-12">
       <div className="container mx-auto px-4">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 md:gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
           {/* Brand */}
-          <div className="col-span-1 md:col-span-2">
+          <div className="col-span-1 sm:col-span-2 lg:col-span-2">
             <div className="flex items-center space-x-2 mb-4">
               <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg overflow-hidden flex-shrink-0">
                 <img 
@@ -40,7 +40,7 @@ const Footer = () => {
           </div>
 
           {/* Quick Links */}
-          <div>
+          <div className="sm:col-span-1">
             <h4 className="text-base md:text-lg font-semibold mb-3 md:mb-4">{t('footer.quickLinks')}</h4>
             <ul className="space-y-2">
               <li>
@@ -67,7 +67,7 @@ const Footer = () => {
           </div>
 
           {/* Categories */}
-          <div>
+          <div className="sm:col-span-1">
             <h4 className="text-base md:text-lg font-semibold mb-3 md:mb-4">{t('footer.categories')}</h4>
             <ul className="space-y-2 text-gray-400 text-sm md:text-base">
               <li>Makanan Ringan</li>
