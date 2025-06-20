@@ -29,6 +29,14 @@
 
   * {
     @apply border-border;
+    box-sizing: border-box;
+  }
+
+  html {
+    width: 100%;
+    overflow-x: hidden;
+    margin: 0;
+    padding: 0;
   }
 
   body {
@@ -37,11 +45,7 @@
     padding: 0;
     width: 100%;
     overflow-x: hidden;
-  }
-
-  html {
-    width: 100%;
-    overflow-x: hidden;
+    min-height: 100vh;
   }
 
   #root {
@@ -49,6 +53,7 @@
     min-height: 100vh;
     margin: 0;
     padding: 0;
+    overflow-x: hidden;
   }
 }
 
@@ -75,6 +80,7 @@
 
   .container {
     width: 100%;
+    max-width: 1200px;
     margin-left: auto;
     margin-right: auto;
     padding-left: 1rem;
@@ -101,13 +107,7 @@
 
   @media (min-width: 1280px) {
     .container {
-      max-width: 1280px;
-    }
-  }
-
-  @media (min-width: 1536px) {
-    .container {
-      max-width: 1536px;
+      max-width: 1200px;
     }
   }
 }
