@@ -1,6 +1,6 @@
 
 import { Navigate } from 'react-router-dom';
-import { useFirebaseAuth } from '@/hooks/useFirebaseAuth';
+import { useAuth } from '@/hooks/useAuth';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import AdminSidebar from './AdminSidebar';
@@ -10,20 +10,20 @@ interface AdminLayoutProps {
 }
 
 const AdminLayout = ({ children }: AdminLayoutProps) => {
-  const { user, loading: authLoading } = useFirebaseAuth();
+  const { user, loading: authLoading } = useAuth();
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const checkAdminStatus = async () => {
       if (user) {
-        console.log('Checking admin status for Firebase user:', user.uid);
+        console.log('Checking admin status for user:', user.id);
         
-        // Check admin status using firebase_uid - use maybeSingle to avoid errors
+        // Check admin status using user id - use maybeSingle to avoid errors
         const { data, error } = await supabase
           .from('profiles')
           .select('role')
-          .eq('firebase_uid', user.uid)
+          .eq('id', user.id)
           .maybeSingle();
         
         if (error) {
@@ -54,7 +54,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
   }
 
   if (!user) {
-    console.log('No Firebase user, redirecting to auth');
+    console.log('No user, redirecting to auth');
     return <Navigate to="/auth" replace />;
   }
 
