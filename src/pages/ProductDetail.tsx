@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { useProduct, useProducts } from '@/hooks/useProducts';
 import { formatPrice } from '@/utils/cart';
 import { useCartAnimation } from '@/hooks/useCartAnimation';
+import { ShoppingCart, Truck, Check } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import AddToCartButton from '@/components/AddToCartButton';
@@ -171,30 +172,46 @@ const ProductDetail = () => {
 
             {/* Add to Cart Button */}
             {product.stock > 0 ? (
-              <AddToCartButton
-                product={product}
-                quantity={quantity}
-                className="w-full text-lg py-4 flex items-center justify-center space-x-2"
-                onAddToCart={handleAddToCart}
-              />
+              <button
+                onClick={() => {
+                  const rect = quantityRef.current?.getBoundingClientRect();
+                  if (rect) {
+                    handleAddToCart({
+                      x: rect.left + rect.width / 2,
+                      y: rect.top + rect.height / 2
+                    });
+                  }
+                }}
+                className="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white text-lg py-4 rounded-xl font-semibold transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg flex items-center justify-center space-x-3 group"
+              >
+                <ShoppingCart className="w-5 h-5 group-hover:animate-bounce" />
+                <span>Tambahkan ke Keranjang</span>
+              </button>
             ) : (
               <button
                 disabled
-                className="w-full bg-gray-400 text-white text-lg py-4 rounded-lg cursor-not-allowed"
+                className="w-full bg-gray-400 text-white text-lg py-4 rounded-xl cursor-not-allowed flex items-center justify-center space-x-3"
               >
-                Stok Habis
+                <ShoppingCart className="w-5 h-5" />
+                <span>Stok Habis</span>
               </button>
             )}
 
             {/* Product Features */}
             <div className="grid grid-cols-2 gap-4 pt-6 border-t border-gray-200">
-              <div className="text-center p-4 bg-gray-100 rounded-lg">
-                <div className="text-2xl mb-2">🚚</div>
-                <div className="text-sm font-medium">Pengiriman Cepat</div>
+              <div className="text-center p-6 bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-300">
+                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <Truck className="w-6 h-6 text-blue-600" />
+                </div>
+                <div className="text-sm font-semibold text-gray-800 mb-1">Pengiriman Express</div>
+                <div className="text-xs text-gray-600">Dikirim dengan layanan terpercaya</div>
               </div>
-              <div className="text-center p-4 bg-gray-100 rounded-lg">
-                <div className="text-2xl mb-2">✅</div>
-                <div className="text-sm font-medium">Kualitas Terjamin</div>
+              <div className="text-center p-6 bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-300">
+                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <Check className="w-6 h-6 text-green-600" />
+                </div>
+                <div className="text-sm font-semibold text-gray-800 mb-1">Kualitas Premium</div>
+                <div className="text-xs text-gray-600">Produk berkualitas tinggi terjamin</div>
               </div>
             </div>
           </div>

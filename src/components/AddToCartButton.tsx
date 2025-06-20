@@ -1,6 +1,6 @@
 
 import { useState, useRef } from 'react';
-import { Plus, Check } from 'lucide-react';
+import { ShoppingCart, Check } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Product } from '@/types';
 import { useCart } from '@/hooks/useCart';
@@ -17,7 +17,7 @@ interface AddToCartButtonProps {
 const AddToCartButton = ({ 
   product, 
   quantity = 1, 
-  className = "btn-primary",
+  className = "",
   onAddToCart,
   disabled = false
 }: AddToCartButtonProps) => {
@@ -74,8 +74,15 @@ const AddToCartButton = ({
       ref={buttonRef}
       onClick={handleAddToCart}
       disabled={isOutOfStock || disabled}
-      className={`${className} ${isOutOfStock ? 'bg-gray-400 text-white cursor-not-allowed' : ''} 
-        transition-all duration-200 ease-in-out relative overflow-hidden`}
+      className={`
+        ${className}
+        ${isOutOfStock 
+          ? 'bg-gray-400 text-white cursor-not-allowed' 
+          : 'bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white hover:shadow-lg'
+        } 
+        transition-all duration-300 ease-in-out relative overflow-hidden rounded-lg font-semibold
+        flex items-center justify-center space-x-2
+      `}
       whileHover={!isOutOfStock ? { scale: 1.02 } : {}}
       whileTap={!isOutOfStock ? { scale: 0.98 } : {}}
       animate={isAdded ? {
@@ -91,10 +98,10 @@ const AddToCartButton = ({
           animate={isAdded ? { rotate: 360, scale: [1, 1.2, 1] } : { rotate: 0, scale: 1 }}
           transition={{ duration: 0.5 }}
         >
-          {isAdded ? <Check className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+          {isAdded ? <Check className="w-4 h-4" /> : <ShoppingCart className="w-4 h-4" />}
         </motion.div>
         <span>
-          {isOutOfStock ? 'Habis' : isAdded ? '✓ Ditambahkan' : 'Keranjang'}
+          {isOutOfStock ? 'Stok Habis' : isAdded ? '✓ Ditambahkan' : 'Tambah ke Keranjang'}
         </span>
       </motion.div>
     </motion.button>
