@@ -125,19 +125,19 @@ const Cart = () => {
                   {cart.map((item) => (
                     <div key={item.id} className="flex items-center space-x-4 border-b pb-4">
                       <img
-                        src={item.imageUrl || '/placeholder.svg'}
+                        src={item.image_url || '/placeholder.svg'}
                         alt={item.name}
                         className="w-20 h-20 object-cover rounded-lg"
                       />
                       <div className="flex-1">
                         <h3 className="font-semibold text-gray-800">{item.name}</h3>
                         <p className="text-primary font-bold">¥{item.price}</p>
-                        {item.selectedVariants && item.selectedVariants.length > 0 && (
+                        {item.selectedVariants && Object.keys(item.selectedVariants).length > 0 && (
                           <div className="text-sm text-gray-600">
-                            {item.selectedVariants.map((variant, index) => (
-                              <span key={index}>
-                                {variant.type}: {variant.value}
-                                {index < item.selectedVariants.length - 1 ? ', ' : ''}
+                            {Object.entries(item.selectedVariants).map(([type, value], index) => (
+                              <span key={`${type}-${index}`}>
+                                {type}: {value}
+                                {index < Object.keys(item.selectedVariants || {}).length - 1 ? ', ' : ''}
                               </span>
                             ))}
                           </div>
