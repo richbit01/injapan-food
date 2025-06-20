@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Save, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import AdminLayout from '@/components/admin/AdminLayout';
+import ProductVariants from '@/components/admin/ProductVariants';
 
 const AddProduct = () => {
   const navigate = useNavigate();
@@ -25,6 +25,7 @@ const AddProduct = () => {
     category: '',
     stock: ''
   });
+  const [variants, setVariants] = useState([]);
 
   const categories = [
     'Makanan Ringan',
@@ -254,7 +255,7 @@ const AddProduct = () => {
           </div>
         </div>
 
-        <div className="max-w-2xl">
+        <div className="max-w-4xl">
           <Card>
             <CardHeader>
               <CardTitle>Informasi Produk</CardTitle>
@@ -285,7 +286,7 @@ const AddProduct = () => {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="price">Harga (¥) *</Label>
+                    <Label htmlFor="price">Harga Dasar (¥) *</Label>
                     <Input
                       id="price"
                       type="text"
@@ -312,7 +313,14 @@ const AddProduct = () => {
 
                 <div>
                   <Label htmlFor="category">Kategori *</Label>
-                  <Select value={formData.category} onValueChange={(value) => handleInputChange('category', value)}>
+                  <Select 
+                    value={formData.category} 
+                    onValueChange={(value) => {
+                      handleInputChange('category', value);
+                      // Reset variants when category changes
+                      setVariants([]);
+                    }}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Pilih kategori" />
                     </SelectTrigger>
@@ -324,6 +332,15 @@ const AddProduct = () => {
                       ))}
                     </SelectContent>
                   </Select>
+                </div>
+
+                {/* Product Variants Section */}
+                <div className="border-t pt-6">
+                  <ProductVariants
+                    category={formData.category}
+                    variants={variants}
+                    onChange={setVariants}
+                  />
                 </div>
 
                 <div>

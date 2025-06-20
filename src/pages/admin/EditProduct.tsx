@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useProduct } from '@/hooks/useProducts';
@@ -30,6 +29,7 @@ const EditProduct = () => {
     category: '',
     stock: ''
   });
+  const [variants, setVariants] = useState([]);
 
   const categories = [
     'Makanan Ringan',
@@ -270,7 +270,7 @@ const EditProduct = () => {
           </div>
         </div>
 
-        <div className="max-w-2xl">
+        <div className="max-w-4xl">
           <Card>
             <CardHeader>
               <CardTitle>Edit Informasi Produk</CardTitle>
@@ -301,7 +301,7 @@ const EditProduct = () => {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="price">Harga (¥) *</Label>
+                    <Label htmlFor="price">Harga Dasar (¥) *</Label>
                     <Input
                       id="price"
                       type="text"
@@ -328,7 +328,16 @@ const EditProduct = () => {
 
                 <div>
                   <Label htmlFor="category">Kategori *</Label>
-                  <Select value={formData.category} onValueChange={(value) => handleInputChange('category', value)}>
+                  <Select 
+                    value={formData.category} 
+                    onValueChange={(value) => {
+                      handleInputChange('category', value);
+                      // Reset variants when category changes
+                      if (value !== formData.category) {
+                        setVariants([]);
+                      }
+                    }}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Pilih kategori" />
                     </SelectTrigger>
@@ -340,6 +349,15 @@ const EditProduct = () => {
                       ))}
                     </SelectContent>
                   </Select>
+                </div>
+
+                {/* Product Variants Section */}
+                <div className="border-t pt-6">
+                  <ProductVariants
+                    category={formData.category}
+                    variants={variants}
+                    onChange={setVariants}
+                  />
                 </div>
 
                 <div>

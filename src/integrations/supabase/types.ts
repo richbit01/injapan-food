@@ -344,6 +344,36 @@ export type Database = {
         }
         Relationships: []
       }
+      variant_options: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          is_required: boolean
+          options: Json
+          updated_at: string
+          variant_name: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          id?: string
+          is_required?: boolean
+          options?: Json
+          updated_at?: string
+          variant_name: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          is_required?: boolean
+          options?: Json
+          updated_at?: string
+          variant_name?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
