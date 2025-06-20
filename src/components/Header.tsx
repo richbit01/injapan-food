@@ -89,10 +89,11 @@ const Header = ({ shouldAnimateCart = false }: HeaderProps) => {
             {/* Cart */}
             <button
               onClick={() => handleNavClick('/cart')}
-              className="relative p-2 text-gray-700 hover:text-primary transition-colors duration-200 cursor-pointer"
-              aria-label="Shopping Cart"
+              className="relative p-2 text-gray-700 hover:text-primary transition-colors duration-200 cursor-pointer flex items-center space-x-1"
+              aria-label="Keranjang Saya"
             >
               <CartIcon onAnimationTrigger={shouldAnimateCart} />
+              <span className="hidden sm:inline text-sm font-medium">Keranjang Saya</span>
             </button>
 
             {/* Auth */}
@@ -144,6 +145,12 @@ const Header = ({ shouldAnimateCart = false }: HeaderProps) => {
                   {item.label}
                 </button>
               ))}
+              <button
+                onClick={() => handleNavClick('/cart')}
+                className="text-gray-700 hover:text-primary font-medium text-left cursor-pointer"
+              >
+                Keranjang Saya
+              </button>
               {!user && (
                 <button
                   onClick={() => handleNavClick('/auth')}
