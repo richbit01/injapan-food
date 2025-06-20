@@ -1,6 +1,7 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useFirebaseAuth } from '@/hooks/useFirebaseAuth';
+import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,7 +21,7 @@ interface UserProfile {
 }
 
 const UserManagement = () => {
-  const { user } = useFirebaseAuth();
+  const { user } = useAuth();
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<string | null>(null);
@@ -133,7 +134,7 @@ const UserManagement = () => {
     });
   };
 
-  const currentUserRole = users.find(u => u.firebase_uid === user?.uid)?.role;
+  const currentUserRole = users.find(u => u.id === user?.id)?.role;
   const canEditRoles = currentUserRole === 'admin';
 
   return (
@@ -176,7 +177,7 @@ const UserManagement = () => {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Nama Lengkap</TableHead>
-                      <TableHead>Firebase UID</TableHead>
+                      <TableHead>User ID</TableHead>
                       <TableHead>Role</TableHead>
                       <TableHead>Bergabung</TableHead>
                       <TableHead>Terakhir Update</TableHead>
@@ -186,7 +187,7 @@ const UserManagement = () => {
                   <TableBody>
                     {users.map((userProfile) => {
                       const RoleIcon = getRoleIcon(userProfile.role);
-                      const isCurrentUser = userProfile.firebase_uid === user?.uid;
+                      const isCurrentUser = userProfile.id === user?.id;
                       
                       return (
                         <TableRow key={userProfile.id}>
@@ -203,7 +204,7 @@ const UserManagement = () => {
                           </TableCell>
                           <TableCell>
                             <code className="text-xs bg-gray-100 px-2 py-1 rounded">
-                              {userProfile.firebase_uid || 'Tidak ada UID'}
+                              {userProfile.id}
                             </code>
                           </TableCell>
                           <TableCell>
