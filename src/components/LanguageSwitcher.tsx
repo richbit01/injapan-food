@@ -2,7 +2,6 @@
 import { useState } from 'react';
 import { useLanguage } from '@/hooks/useLanguage';
 import { Button } from '@/components/ui/button';
-import { ChevronDown } from 'lucide-react';
 
 const LanguageSwitcher = () => {
   const { language, setLanguage } = useLanguage();
@@ -18,18 +17,16 @@ const LanguageSwitcher = () => {
   return (
     <div className="relative">
       <Button
-        variant="outline"
+        variant="ghost"
         size="sm"
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center space-x-2 min-w-[100px]"
+        className="p-2 hover:bg-gray-100 rounded-full"
       >
-        <span>{currentLanguage?.flag}</span>
-        <span className="hidden sm:inline">{currentLanguage?.code.toUpperCase()}</span>
-        <ChevronDown className="w-3 h-3" />
+        <span className="text-xl">{currentLanguage?.flag}</span>
       </Button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+        <div className="absolute right-0 mt-2 w-32 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
           {languages.map((lang) => (
             <button
               key={lang.code}
@@ -37,12 +34,12 @@ const LanguageSwitcher = () => {
                 setLanguage(lang.code as 'id' | 'en');
                 setIsOpen(false);
               }}
-              className={`w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center space-x-2 first:rounded-t-lg last:rounded-b-lg ${
+              className={`w-full px-3 py-2 text-left hover:bg-gray-50 flex items-center space-x-2 first:rounded-t-lg last:rounded-b-lg ${
                 language === lang.code ? 'bg-gray-50 font-medium' : ''
               }`}
             >
-              <span>{lang.flag}</span>
-              <span>{lang.name}</span>
+              <span className="text-lg">{lang.flag}</span>
+              <span className="text-sm">{lang.code.toUpperCase()}</span>
             </button>
           ))}
         </div>
