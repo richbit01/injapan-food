@@ -97,7 +97,7 @@ Mohon konfirmasi pesanan saya. Terima kasih banyak! 🙏`;
 
     try {
       const whatsappMessage = generateWhatsAppMessage(data);
-      const phoneNumber = '6281234567890'; // Replace with your actual WhatsApp number
+      const phoneNumber = '6285155452259'; // Replace with your actual WhatsApp number
       const whatsappUrl = `https://wa.me/${phoneNumber}?text=${whatsappMessage}`;
       
       // Open WhatsApp
