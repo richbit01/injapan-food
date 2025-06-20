@@ -83,9 +83,7 @@ const ProductCard = ({ product, onAddToCart }: ProductCardProps) => {
           }`}
           onAddToCart={handleAddToCart}
           disabled={product.stock === 0}
-        >
-          {product.stock === 0 ? 'Habis' : 'Tambah ke Keranjang'}
-        </AddToCartButton>
+        />
       </div>
     </div>
   );

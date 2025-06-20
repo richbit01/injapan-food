@@ -57,15 +57,15 @@ const Index = () => {
     <div className="min-h-screen bg-white">
       <Header />
       
-      {/* Hero Section - Clean and modern */}
+      {/* Hero Section */}
       <section className="bg-gradient-to-br from-red-600 via-red-700 to-orange-600 text-white">
         <div className="container mx-auto px-4 py-16 md:py-24">
           <div className="max-w-4xl mx-auto text-center">
-            <h1 className="text-3xl md:text-6xl font-bold mb-6 leading-tight">
+            <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
               Makanan Indonesia Asli<br />
               <span className="text-yellow-300">di Jepang</span>
             </h1>
-            <p className="text-lg md:text-xl mb-8 opacity-90 max-w-2xl mx-auto leading-relaxed">
+            <p className="text-xl md:text-2xl mb-8 opacity-90 max-w-2xl mx-auto leading-relaxed">
               Nikmati cita rasa Indonesia yang autentik dengan produk berkualitas tinggi, 
               dikirim langsung ke seluruh Jepang
             </p>
@@ -87,7 +87,7 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Categories Section - Clean grid */}
+      {/* Categories Section */}
       <section className="py-16 bg-gray-50">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
@@ -130,7 +130,7 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Featured Products - Clean layout */}
+      {/* Featured Products */}
       <section className="py-16 bg-white">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
@@ -174,7 +174,7 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Why Choose Us - Modern cards */}
+      {/* Why Choose Us */}
       <section className="py-16 bg-gray-50">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
@@ -218,7 +218,7 @@ const Index = () => {
         </div>
       </section>
 
-      {/* CTA Section - Simple and effective */}
+      {/* CTA Section */}
       <section className="py-16 bg-red-600 text-white">
         <div className="container mx-auto px-4 text-center">
           <div className="max-w-3xl mx-auto">
