@@ -1,117 +1,77 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/useFirebaseAuth';
+import { getFirestore, doc, setDoc, updateDoc, collection } from 'firebase/firestore';
+import { toast } from '@/hooks/use-toast';
 
 export const useConfirmOrder = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const db = getFirestore();
 
-  const confirmOrder = useMutation({
-    mutationFn: async ({ orderId, referralTransactionId }: { orderId: string; referralTransactionId?: string }) => {
-      if (!user?.id) {
-        throw new Error('Admin authentication required');
+  const mutation = useMutation({
+    mutationFn: async (orderData: {
+      user_id: string;
+      user_email: string;
+      customer_name: string;
+      customer_email: string;
+      customer_phone: string;
+      customer_address: string;
+      notes: string;
+      items: any[];
+      total_amount: number;
+      status: string;
+    }) => {
+      if (!user?.uid) {
+        throw new Error('User authentication required');
       }
 
-      // Step 1: Update order status to 'completed'
-      const { data: order, error: orderError } = await supabase
-        .from('orders')
-        .update({ 
-          status: 'completed',
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', orderId)
-        .select()
-        .single();
+      // Create order document in Firebase
+      const orderRef = doc(collection(db, 'orders'));
+      const orderDoc = {
+        id: orderRef.id,
+        user_id: orderData.user_id,
+        user_email: orderData.user_email,
+        customer_info: {
+          name: orderData.customer_name,
+          email: orderData.customer_email,
+          phone: orderData.customer_phone,
+          address: orderData.customer_address,
+          notes: orderData.notes
+        },
+        items: orderData.items,
+        total_amount: orderData.total_amount,
+        status: orderData.status,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
 
-      if (orderError) {
-        throw new Error(`Failed to confirm order: ${orderError.message}`);
-      }
+      await setDoc(orderRef, orderDoc);
 
-      // Step 2: Confirm referral transaction if exists
-      if (referralTransactionId) {
-        try {
-          const { error: confirmError } = await supabase.rpc('confirm_referral_transaction', {
-            transaction_id: referralTransactionId,
-            admin_id: user.id
-          });
+      toast({
+        title: "Order Placed Successfully!",
+        description: "Your order has been submitted and is being processed.",
+      });
 
-          if (confirmError) {
-            throw confirmError;
-          }
-        } catch (referralError) {
-          // Continue even if referral processing fails
-        }
-      }
-
-      return order;
+      return orderDoc;
     },
-    onSuccess: (order) => {
-      // Invalidate all relevant queries
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['orders'] });
-      queryClient.invalidateQueries({ queryKey: ['pending-orders'] });
-      queryClient.invalidateQueries({ queryKey: ['referral-transactions'] });
-      queryClient.invalidateQueries({ queryKey: ['user-referral-code'] });
     },
     onError: (error) => {
-      console.error('Order confirmation failed:', error);
-    }
-  });
-
-  const cancelOrder = useMutation({
-    mutationFn: async ({ orderId, referralTransactionId }: { orderId: string; referralTransactionId?: string }) => {
-      if (!user?.id) {
-        throw new Error('Admin authentication required');
-      }
-
-      // Step 1: Update order status
-      const { data: order, error: orderError } = await supabase
-        .from('orders')
-        .update({ 
-          status: 'cancelled',
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', orderId)
-        .select()
-        .single();
-
-      if (orderError) {
-        throw new Error(`Failed to cancel order: ${orderError.message}`);
-      }
-
-      // Step 2: Cancel referral transaction if exists
-      if (referralTransactionId) {
-        try {
-          const { error: cancelError } = await supabase.rpc('cancel_referral_transaction', {
-            transaction_id: referralTransactionId,
-            admin_id: user.id
-          });
-
-          if (cancelError) {
-            throw cancelError;
-          }
-        } catch (referralError) {
-          // Continue even if referral processing fails
-        }
-      }
-
-      return order;
-    },
-    onSuccess: (order) => {
-      // Invalidate all relevant queries
-      queryClient.invalidateQueries({ queryKey: ['orders'] });
-      queryClient.invalidateQueries({ queryKey: ['pending-orders'] });
-      queryClient.invalidateQueries({ queryKey: ['referral-transactions'] });
-      queryClient.invalidateQueries({ queryKey: ['user-referral-code'] });
-    },
-    onError: (error) => {
-      console.error('Order cancellation failed:', error);
+      console.error('Order submission failed:', error);
+      toast({
+        title: "Order Failed",
+        description: "There was an error placing your order. Please try again.",
+        variant: "destructive",
+      });
     }
   });
 
   return {
-    confirmOrder: confirmOrder.mutateAsync,
-    cancelOrder: cancelOrder.mutateAsync,
-    isLoading: confirmOrder.isPending || cancelOrder.isPending
+    mutate: mutation.mutate,
+    isPending: mutation.isPending,
+    isError: mutation.isError,
+    error: mutation.error
   };
 };

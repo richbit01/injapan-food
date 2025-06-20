@@ -15,7 +15,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
 
 const Cart = () => {
-  const { items, updateQuantity, removeItem, getTotalPrice, clearCart } = useCart();
+  const { cart, updateQuantity, removeFromCart, total, clearCart } = useCart();
   const { user } = useAuth();
   const { t } = useLanguage();
   const { mutate: confirmOrder, isPending } = useConfirmOrder();
@@ -29,11 +29,11 @@ const Cart = () => {
   });
 
   const handleQuantityChange = (id: string, change: number) => {
-    const item = items.find(item => item.id === id);
+    const item = cart.find(item => item.id === id);
     if (item) {
       const newQuantity = Math.max(0, item.quantity + change);
       if (newQuantity === 0) {
-        removeItem(id);
+        removeFromCart(id);
       } else {
         updateQuantity(id, newQuantity);
       }
@@ -67,8 +67,8 @@ const Cart = () => {
       customer_phone: customerInfo.phone,
       customer_address: customerInfo.address,
       notes: customerInfo.notes,
-      items: items,
-      total_amount: getTotalPrice(),
+      items: cart,
+      total_amount: total,
       status: 'pending' as const
     };
 
@@ -86,7 +86,7 @@ const Cart = () => {
     });
   };
 
-  if (items.length === 0) {
+  if (cart.length === 0) {
     return (
       <>
         <Header />
@@ -122,20 +122,25 @@ const Cart = () => {
               <div className="bg-white rounded-lg shadow-md p-6">
                 <h2 className="text-xl font-semibold mb-4">{t('cart.items')}</h2>
                 <div className="space-y-4">
-                  {items.map((item) => (
+                  {cart.map((item) => (
                     <div key={item.id} className="flex items-center space-x-4 border-b pb-4">
                       <img
-                        src={item.image}
+                        src={item.imageUrl || '/placeholder.svg'}
                         alt={item.name}
                         className="w-20 h-20 object-cover rounded-lg"
                       />
                       <div className="flex-1">
                         <h3 className="font-semibold text-gray-800">{item.name}</h3>
                         <p className="text-primary font-bold">¥{item.price}</p>
-                        {item.selectedVariant && (
-                          <p className="text-sm text-gray-600">
-                            {item.selectedVariant.type}: {item.selectedVariant.value}
-                          </p>
+                        {item.selectedVariants && item.selectedVariants.length > 0 && (
+                          <div className="text-sm text-gray-600">
+                            {item.selectedVariants.map((variant, index) => (
+                              <span key={index}>
+                                {variant.type}: {variant.value}
+                                {index < item.selectedVariants.length - 1 ? ', ' : ''}
+                              </span>
+                            ))}
+                          </div>
                         )}
                       </div>
                       <div className="flex items-center space-x-2">
@@ -154,7 +159,7 @@ const Cart = () => {
                         </button>
                       </div>
                       <button
-                        onClick={() => removeItem(item.id)}
+                        onClick={() => removeFromCart(item.id)}
                         className="p-2 text-red-500 hover:bg-red-50 rounded-full transition-colors"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -230,11 +235,11 @@ const Cart = () => {
                 <div className="space-y-2">
                   <div className="flex justify-between">
                     <span>{t('cart.subtotal')}</span>
-                    <span>¥{getTotalPrice()}</span>
+                    <span>¥{total}</span>
                   </div>
                   <div className="flex justify-between font-bold text-lg border-t pt-2">
                     <span>{t('cart.total')}</span>
-                    <span>¥{getTotalPrice()}</span>
+                    <span>¥{total}</span>
                   </div>
                 </div>
                 
