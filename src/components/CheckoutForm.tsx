@@ -78,7 +78,7 @@ ${productList}
 
 ${data.notes ? `Catatan: ${data.notes}` : ''}
 
-Mohon konfirmasi pesanan saya. Terima kasih banyak;
+Mohon konfirmasi pesanan saya. Terima kasih banyak!`;
 
     return encodeURIComponent(message);
   };
