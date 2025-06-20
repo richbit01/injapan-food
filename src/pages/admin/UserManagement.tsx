@@ -7,7 +7,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Users, Shield, User as UserIcon, RefreshCw } from 'lucide-react';
+import { Users, Shield, User as UserIcon, RefreshCw, UserPlus } from 'lucide-react';
+import { getFirestore, collection, getDocs, doc, setDoc, updateDoc, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth';
 
 interface UserProfile {
   uid: string;
@@ -16,68 +18,139 @@ interface UserProfile {
   role: 'admin' | 'user';
   createdAt: string;
   lastLogin: string;
+  isOnline?: boolean;
 }
 
 const UserManagement = () => {
   const { user } = useAuth();
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentUserRole, setCurrentUserRole] = useState<'admin' | 'user'>('user');
+  
+  const db = getFirestore();
+  const auth = getAuth();
 
-  const fetchUsers = async () => {
-    try {
-      console.log('Firebase does not provide direct user management API');
-      console.log('For production, you would need Firebase Admin SDK on backend');
-      
-      // For demo purposes, create mock data based on current user
-      const mockUsers: UserProfile[] = [
-        {
-          uid: user?.uid || 'demo-1',
-          email: user?.email || 'admin@gmail.com',
-          displayName: user?.displayName || 'Admin User',
-          role: 'admin',
-          createdAt: new Date().toISOString(),
-          lastLogin: new Date().toISOString()
-        },
-        {
-          uid: 'demo-2',
-          email: 'ari4rich@gmail.com',
-          displayName: 'Ari',
-          role: 'admin',
-          createdAt: new Date(Date.now() - 86400000).toISOString(),
-          lastLogin: new Date(Date.now() - 3600000).toISOString()
-        },
-        {
-          uid: 'demo-3',
-          email: 'user@example.com',
-          displayName: 'Regular User',
-          role: 'user',
-          createdAt: new Date(Date.now() - 172800000).toISOString(),
-          lastLogin: new Date(Date.now() - 7200000).toISOString()
+  // Check current user's role
+  useEffect(() => {
+    const checkCurrentUserRole = async () => {
+      if (user) {
+        const adminEmails = ['admin@gmail.com', 'ari4rich@gmail.com'];
+        if (adminEmails.includes(user.email || '')) {
+          setCurrentUserRole('admin');
+          // Create/update current user profile in Firestore
+          await ensureUserProfile(user.uid, user.email || '', user.displayName || '', 'admin');
+        } else {
+          setCurrentUserRole('user');
+          await ensureUserProfile(user.uid, user.email || '', user.displayName || '', 'user');
         }
-      ];
-      
-      setUsers(mockUsers);
-      
-      toast({
-        title: "Info",
-        description: "Menampilkan data demo. Untuk production, gunakan Firebase Admin SDK di backend.",
-        variant: "default"
-      });
+      }
+    };
+
+    checkCurrentUserRole();
+  }, [user]);
+
+  // Ensure user profile exists in Firestore
+  const ensureUserProfile = async (uid: string, email: string, displayName: string, role: 'admin' | 'user') => {
+    try {
+      const userRef = doc(db, 'users', uid);
+      await setDoc(userRef, {
+        uid,
+        email,
+        displayName: displayName || email.split('@')[0],
+        role,
+        createdAt: new Date().toISOString(),
+        lastLogin: new Date().toISOString(),
+        isOnline: true
+      }, { merge: true });
     } catch (error) {
-      console.error('Error in fetchUsers:', error);
-      toast({
-        title: "Error",
-        description: "Gagal memuat data pengguna",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
+      console.error('Error ensuring user profile:', error);
     }
   };
 
+  // Fetch users with real-time updates
   useEffect(() => {
-    fetchUsers();
-  }, [user]);
+    if (!user || currentUserRole !== 'admin') {
+      setLoading(false);
+      return;
+    }
+
+    const usersQuery = query(
+      collection(db, 'users'),
+      orderBy('createdAt', 'desc')
+    );
+
+    const unsubscribe = onSnapshot(usersQuery, (snapshot) => {
+      const usersData: UserProfile[] = [];
+      snapshot.forEach((doc) => {
+        const userData = doc.data() as UserProfile;
+        usersData.push(userData);
+      });
+      
+      console.log('Real-time users data:', usersData);
+      setUsers(usersData);
+      setLoading(false);
+    }, (error) => {
+      console.error('Error fetching users:', error);
+      toast({
+        title: "Error",
+        description: "Gagal memuat data pengguna real-time",
+        variant: "destructive"
+      });
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [user, currentUserRole, db]);
+
+  const handleRoleUpdate = async (userId: string, newRole: 'admin' | 'user') => {
+    if (currentUserRole !== 'admin') {
+      toast({
+        title: "Akses Ditolak",
+        description: "Hanya admin yang dapat mengubah role pengguna",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (userId === user?.uid) {
+      toast({
+        title: "Tidak Diizinkan",
+        description: "Anda tidak dapat mengubah role sendiri",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      const userRef = doc(db, 'users', userId);
+      await updateDoc(userRef, {
+        role: newRole,
+        updatedAt: new Date().toISOString()
+      });
+
+      toast({
+        title: "Berhasil",
+        description: `Role pengguna berhasil diubah menjadi ${newRole}`,
+        variant: "default"
+      });
+    } catch (error) {
+      console.error('Error updating user role:', error);
+      toast({
+        title: "Error",
+        description: "Gagal mengubah role pengguna",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const refreshUsers = () => {
+    // The onSnapshot listener will automatically refresh the data
+    toast({
+      title: "Info",
+      description: "Data pengguna diperbarui secara real-time",
+      variant: "default"
+    });
+  };
 
   const getRoleBadgeVariant = (role: string) => {
     return role === 'admin' ? 'destructive' : 'secondary';
@@ -97,16 +170,7 @@ const UserManagement = () => {
     });
   };
 
-  const currentUserRole = users.find(u => u.uid === user?.uid)?.role;
   const canEditRoles = currentUserRole === 'admin';
-
-  const handleRoleUpdate = (userId: string, newRole: 'admin' | 'user') => {
-    toast({
-      title: "Firebase Limitation",
-      description: "Role management requires Firebase Admin SDK on backend server",
-      variant: "default"
-    });
-  };
 
   return (
     <AdminLayout>
@@ -116,20 +180,29 @@ const UserManagement = () => {
             <Users className="w-8 h-8 text-blue-600" />
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Kelola Pengguna</h1>
-              <p className="text-gray-600">Manage user roles dan permissions (Demo Mode)</p>
+              <p className="text-gray-600">Kelola pengguna dan role dengan Firebase Firestore</p>
             </div>
           </div>
-          <Button onClick={fetchUsers} variant="outline" disabled={loading}>
+          <Button onClick={refreshUsers} variant="outline" disabled={loading}>
             <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
         </div>
 
-        <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-          <p className="text-blue-800 text-sm">
-            <Shield className="w-4 h-4 inline mr-2" />
-            <strong>Firebase Auth Note:</strong> User management dengan Firebase memerlukan Firebase Admin SDK di backend server. 
-            Saat ini menampilkan data demo untuk tujuan UI testing.
+        {currentUserRole !== 'admin' && (
+          <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <p className="text-yellow-800 text-sm">
+              <Shield className="w-4 h-4 inline mr-2" />
+              <strong>Akses Terbatas:</strong> Anda perlu role admin untuk mengakses fitur manajemen pengguna.
+            </p>
+          </div>
+        )}
+
+        <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+          <p className="text-green-800 text-sm">
+            <UserPlus className="w-4 h-4 inline mr-2" />
+            <strong>Real-time Updates:</strong> Data pengguna akan otomatis terupdate ketika ada perubahan. 
+            Pengguna baru yang mendaftar akan langsung muncul di daftar ini.
           </p>
         </div>
 
@@ -138,6 +211,11 @@ const UserManagement = () => {
             <CardTitle className="flex items-center space-x-2">
               <Users className="w-5 h-5" />
               <span>Daftar Pengguna ({users.length})</span>
+              {users.length > 0 && (
+                <Badge variant="outline" className="ml-2">
+                  Real-time
+                </Badge>
+              )}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -148,7 +226,9 @@ const UserManagement = () => {
               </div>
             ) : users.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
-                Tidak ada data pengguna
+                <UserPlus className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                <p>Belum ada pengguna terdaftar</p>
+                <p className="text-sm">Pengguna yang mendaftar akan muncul di sini secara otomatis</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -160,6 +240,7 @@ const UserManagement = () => {
                       <TableHead>Role</TableHead>
                       <TableHead>Bergabung</TableHead>
                       <TableHead>Login Terakhir</TableHead>
+                      <TableHead>Status</TableHead>
                       {canEditRoles && <TableHead>Aksi</TableHead>}
                     </TableRow>
                   </TableHeader>
@@ -200,6 +281,11 @@ const UserManagement = () => {
                           <TableCell className="text-sm text-gray-600">
                             {formatDate(userProfile.lastLogin)}
                           </TableCell>
+                          <TableCell>
+                            <Badge variant={userProfile.isOnline ? 'default' : 'secondary'}>
+                              {userProfile.isOnline ? 'Online' : 'Offline'}
+                            </Badge>
+                          </TableCell>
                           {canEditRoles && (
                             <TableCell>
                               {isCurrentUser ? (
@@ -212,7 +298,7 @@ const UserManagement = () => {
                                   variant="outline"
                                   onClick={() => handleRoleUpdate(userProfile.uid, userProfile.role === 'admin' ? 'user' : 'admin')}
                                 >
-                                  Toggle Role (Demo)
+                                  Jadikan {userProfile.role === 'admin' ? 'User' : 'Admin'}
                                 </Button>
                               )}
                             </TableCell>
@@ -227,7 +313,7 @@ const UserManagement = () => {
           </CardContent>
         </Card>
 
-        {!canEditRoles && (
+        {!canEditRoles && users.length > 0 && (
           <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
             <p className="text-yellow-800 text-sm">
               <Shield className="w-4 h-4 inline mr-2" />
