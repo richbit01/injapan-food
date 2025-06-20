@@ -1,15 +1,12 @@
+
 import { Link, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   Package, 
   ShoppingCart, 
   Users, 
-  Settings, 
-  Gift,
   CheckCircle,
-  History,
   Trash2,
-  BarChart3,
   Upload
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -43,16 +40,6 @@ const AdminSidebar = () => {
       title: 'Riwayat Pesanan',
       href: '/admin/orders-history',
       icon: ShoppingCart,
-    },
-    {
-      title: 'Referral Panel',
-      href: '/admin/referral',
-      icon: Gift,
-    },
-    {
-      title: 'Pengaturan Referral',
-      href: '/admin/referral-settings',
-      icon: Settings,
     },
     {
       title: 'Manajemen User',
