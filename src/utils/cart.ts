@@ -33,6 +33,9 @@ export const addToCart = (product: Product, quantity: number = 1): CartItem[] =>
   } else {
     const newItem: CartItem = {
       id: `cart-${product.id}-${Date.now()}`,
+      name: product.name,
+      price: product.price,
+      image_url: product.image_url || '/placeholder.svg',
       product,
       quantity
     };
@@ -66,7 +69,7 @@ export const clearCart = (): void => {
 };
 
 export const getCartTotal = (cart: CartItem[]): number => {
-  return cart.reduce((total, item) => total + (item.product.price * item.quantity), 0);
+  return cart.reduce((total, item) => total + (item.price * item.quantity), 0);
 };
 
 export const formatPrice = (price: number): string => {

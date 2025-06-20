@@ -19,11 +19,11 @@ export const useConfirmOrder = () => {
         timestamp: new Date().toISOString()
       });
 
-      // Step 1: Update order status
+      // Step 1: Update order status to 'completed' instead of 'confirmed'
       const { data: order, error: orderError } = await supabase
         .from('orders')
         .update({ 
-          status: 'confirmed',
+          status: 'completed',
           updated_at: new Date().toISOString()
         })
         .eq('id', orderId)
@@ -35,7 +35,7 @@ export const useConfirmOrder = () => {
         throw new Error(`Failed to confirm order: ${orderError.message}`);
       }
 
-      console.log(`✅ [ADMIN] Order status updated to confirmed:`, {
+      console.log(`✅ [ADMIN] Order status updated to completed:`, {
         orderId: order.id,
         newStatus: order.status
       });
