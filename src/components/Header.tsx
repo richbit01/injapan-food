@@ -45,7 +45,6 @@ const Header = ({ shouldAnimateCart = false }: HeaderProps) => {
             </div>
             <div>
               <h1 className="text-xl font-bold text-primary">Injapan Food</h1>
-              <p className="text-xs text-gray-600">Makanan Indonesia di Jepang</p>
             </div>
           </Link>
 
