@@ -4,9 +4,9 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 
 const HowToBuy = () => {
-  // Scroll to top when component mounts
+  // Enhanced scroll to top when component mounts
   useEffect(() => {
-    window.scrollTo(0, 0);
+    window.scrollTo({ top: 0, behavior: 'instant' });
   }, []);
 
   const steps = [

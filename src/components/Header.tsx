@@ -23,13 +23,21 @@ const Header = ({ shouldAnimateCart = false }: HeaderProps) => {
 
   const isActive = (path: string) => location.pathname === path;
 
-  // Handle navigation with immediate scroll to top
+  // Enhanced navigation with better scroll handling
   const handleNavClick = (path: string) => {
     setIsMenuOpen(false);
-    // Immediately scroll to top
-    window.scrollTo(0, 0);
-    // Navigate programmatically
-    navigate(path);
+    
+    // Force immediate scroll to top before navigation
+    window.scrollTo({ top: 0, behavior: 'instant' });
+    
+    // Use a small delay to ensure scroll happens before navigation
+    setTimeout(() => {
+      navigate(path);
+      // Ensure scroll to top after navigation
+      setTimeout(() => {
+        window.scrollTo({ top: 0, behavior: 'instant' });
+      }, 50);
+    }, 10);
   };
 
   const navItems = [
