@@ -1,4 +1,3 @@
-
 import { useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -118,8 +117,10 @@ const ImportExport = () => {
     }
   };
 
-  const csvTemplate = `"Nama Produk","Harga","Stok","Status","Kategori","Deskripsi"
-"Contoh Produk","500","10","active","Makanan Ringan","Deskripsi contoh produk"`;
+  const csvTemplate = `"Nama Produk","Harga (¥)","Stok","Status","Kategori","Deskripsi"
+"Contoh Mie Instan","500","10","Aktif","Makanan Ringan","Mie instan rasa ayam bawang"
+"Contoh Sambal","750","5","Aktif","Bumbu Dapur","Sambal terasi pedas manis"
+"Contoh Kerupuk","300","20","Tidak Aktif","Makanan Ringan","Kerupuk udang renyah"`;
 
   return (
     <AdminLayout>
@@ -145,16 +146,23 @@ const ImportExport = () => {
               <div className="bg-gray-50 p-4 rounded-lg">
                 <h4 className="font-medium mb-2">Data yang akan diekspor:</h4>
                 <ul className="text-sm text-gray-600 space-y-1">
+                  <li>• ID Produk</li>
                   <li>• Nama produk</li>
-                  <li>• Harga</li>
-                  <li>• Stok</li>
-                  <li>• Status</li>
+                  <li>• Harga (dalam format ¥)</li>
+                  <li>• Stok tersedia</li>
+                  <li>• Status (Aktif/Tidak Aktif/Stok Habis)</li>
                   <li>• Kategori</li>
-                  <li>• Tanggal input</li>
-                  <li>• Deskripsi</li>
-                  <li>• Varian (jika ada)</li>
+                  <li>• Deskripsi lengkap</li>
+                  <li>• Tanggal input (format Indonesia)</li>
+                  <li>• Varian produk (jika ada)</li>
                 </ul>
               </div>
+              <Alert>
+                <FileText className="h-4 w-4" />
+                <AlertDescription>
+                  File CSV akan diformat dengan encoding UTF-8 dan BOM untuk kompatibilitas dengan Excel.
+                </AlertDescription>
+              </Alert>
               <Button 
                 onClick={handleExportProducts}
                 className="w-full bg-green-600 hover:bg-green-700"
@@ -181,7 +189,8 @@ const ImportExport = () => {
               <Alert>
                 <FileText className="h-4 w-4" />
                 <AlertDescription>
-                  File CSV harus menggunakan format yang benar. Download template di bawah sebagai panduan.
+                  File CSV harus menggunakan format yang benar dengan header dalam bahasa Indonesia. 
+                  Status produk: "Aktif", "Tidak Aktif", atau "Stok Habis".
                 </AlertDescription>
               </Alert>
 
@@ -197,26 +206,38 @@ const ImportExport = () => {
               </div>
 
               <div>
-                <h4 className="font-medium mb-2">Template CSV:</h4>
+                <h4 className="font-medium mb-2">Template CSV (Contoh Format):</h4>
                 <Textarea
                   value={csvTemplate}
                   readOnly
-                  rows={3}
-                  className="text-xs font-mono"
+                  rows={5}
+                  className="text-xs font-mono bg-gray-50"
                 />
+                <div className="mt-2 text-xs text-gray-600">
+                  <p><strong>Catatan format:</strong></p>
+                  <ul className="list-disc list-inside space-y-1">
+                    <li>Harga dalam angka (tanpa simbol ¥)</li>
+                    <li>Status: "Aktif", "Tidak Aktif", atau "Stok Habis"</li>
+                    <li>Gunakan tanda kutip untuk text yang mengandung koma</li>
+                    <li>Encoding file harus UTF-8</li>
+                  </ul>
+                </div>
                 <Button
                   variant="outline"
                   size="sm"
-                  className="mt-2"
+                  className="mt-3"
                   onClick={() => {
-                    const blob = new Blob([csvTemplate], { type: 'text/csv' });
+                    const BOM = '\uFEFF';
+                    const blob = new Blob([BOM + csvTemplate], { type: 'text/csv;charset=utf-8;' });
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a');
                     a.href = url;
-                    a.download = 'template-produk.csv';
+                    a.download = 'template-produk-injapan.csv';
                     a.click();
+                    URL.revokeObjectURL(url);
                   }}
                 >
+                  <Download className="w-4 h-4 mr-1" />
                   Download Template
                 </Button>
               </div>
@@ -245,29 +266,38 @@ const ImportExport = () => {
 
               <div className="max-h-80 overflow-y-auto border rounded-lg">
                 <table className="w-full text-sm">
-                  <thead className="bg-gray-50">
+                  <thead className="bg-gray-50 sticky top-0">
                     <tr>
-                      <th className="p-2 text-left">Nama</th>
-                      <th className="p-2 text-left">Harga</th>
-                      <th className="p-2 text-left">Stok</th>
-                      <th className="p-2 text-left">Status</th>
-                      <th className="p-2 text-left">Kategori</th>
+                      <th className="p-3 text-left font-medium">Nama</th>
+                      <th className="p-3 text-left font-medium">Harga</th>
+                      <th className="p-3 text-left font-medium">Stok</th>
+                      <th className="p-3 text-left font-medium">Status</th>
+                      <th className="p-3 text-left font-medium">Kategori</th>
                     </tr>
                   </thead>
                   <tbody>
                     {importData.slice(0, 10).map((product, index) => (
-                      <tr key={index} className="border-t">
-                        <td className="p-2">{product.name}</td>
-                        <td className="p-2">¥{product.price}</td>
-                        <td className="p-2">{product.stock}</td>
-                        <td className="p-2">{product.status}</td>
-                        <td className="p-2">{product.category}</td>
+                      <tr key={index} className="border-t hover:bg-gray-50">
+                        <td className="p-3 font-medium">{product.name}</td>
+                        <td className="p-3">¥{product.price.toLocaleString()}</td>
+                        <td className="p-3">{product.stock}</td>
+                        <td className="p-3">
+                          <span className={`px-2 py-1 rounded-full text-xs ${
+                            product.status === 'active' ? 'bg-green-100 text-green-800' :
+                            product.status === 'inactive' ? 'bg-gray-100 text-gray-800' :
+                            'bg-red-100 text-red-800'
+                          }`}>
+                            {product.status === 'active' ? 'Aktif' : 
+                             product.status === 'inactive' ? 'Tidak Aktif' : 'Stok Habis'}
+                          </span>
+                        </td>
+                        <td className="p-3">{product.category}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
                 {importData.length > 10 && (
-                  <div className="p-2 text-center text-gray-500 text-xs">
+                  <div className="p-3 text-center text-gray-500 text-sm bg-gray-50">
                     ... dan {importData.length - 10} produk lainnya
                   </div>
                 )}
