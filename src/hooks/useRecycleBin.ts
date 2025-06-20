@@ -31,7 +31,8 @@ export const useMoveToRecycleBin = () => {
       itemId: string;
       itemData: any;
     }) => {
-      const { error } = await supabase
+      // First, move to recycle bin
+      const { error: recycleBinError } = await supabase
         .from('recycle_bin')
         .insert([{
           original_table: data.table,
@@ -40,10 +41,27 @@ export const useMoveToRecycleBin = () => {
           deleted_by: (await supabase.auth.getUser()).data.user?.id
         }]);
 
-      if (error) throw error;
+      if (recycleBinError) {
+        console.error('Error moving to recycle bin:', recycleBinError);
+        throw recycleBinError;
+      }
+
+      // Then, delete from original table
+      if (data.table === 'products') {
+        const { error: deleteError } = await supabase
+          .from('products')
+          .delete()
+          .eq('id', data.itemId);
+
+        if (deleteError) {
+          console.error('Error deleting from products table:', deleteError);
+          throw deleteError;
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['recycle-bin'] });
+      queryClient.invalidateQueries({ queryKey: ['products'] });
     },
   });
 };
