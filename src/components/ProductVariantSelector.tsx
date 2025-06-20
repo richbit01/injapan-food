@@ -21,8 +21,13 @@ const ProductVariantSelector = ({
   onVariantChange,
   onValidityChange
 }: ProductVariantSelectorProps) => {
-  const { data: variantOptions = [] } = useVariantOptions(category);
+  const { data: variantOptions = [], isLoading, error } = useVariantOptions(category);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
+
+  console.log('ProductVariantSelector - Category:', category);
+  console.log('ProductVariantSelector - Variant Options:', variantOptions);
+  console.log('ProductVariantSelector - Loading:', isLoading);
+  console.log('ProductVariantSelector - Error:', error);
 
   // Check if selected variants match available product variants
   const getMatchingVariants = () => {
@@ -66,7 +71,37 @@ const ProductVariantSelector = ({
     validateSelection();
   }, [selectedVariants, variantOptions, availableVariants]);
 
-  if (!category || variantOptions.length === 0) {
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold">Pilih Varian Produk</h3>
+        <div className="animate-pulse">
+          <div className="h-4 bg-gray-200 rounded mb-2"></div>
+          <div className="h-10 bg-gray-200 rounded"></div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    console.error('Error loading variant options:', error);
+    return (
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold">Pilih Varian Produk</h3>
+        <div className="p-3 bg-red-50 rounded-lg border border-red-200">
+          <p className="text-sm text-red-600">
+            Gagal memuat opsi varian. Silakan coba lagi.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render if no category or no variant options found
+  if (!category || !variantOptions || variantOptions.length === 0) {
+    console.log('No variant options found for category:', category);
     return null;
   }
 

@@ -34,7 +34,7 @@ export const useVariantOptions = (category?: string) => {
         throw error;
       }
 
-      console.log('Variant options data:', data);
+      console.log('Raw variant options data:', data);
       
       // Parse the JSON options properly
       const parsedData = (data || []).map(item => ({
@@ -44,8 +44,9 @@ export const useVariantOptions = (category?: string) => {
           : JSON.parse(item.options as string)
       }));
 
+      console.log('Parsed variant options:', parsedData);
       return parsedData;
     },
-    enabled: true,
+    enabled: !!category, // Only fetch when category is provided
   });
 };

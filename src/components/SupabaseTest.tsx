@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { supabase } from '@/integrations/supabase/client';
 
 const SupabaseTest = () => {
   const [testResult, setTestResult] = useState<string>('');
@@ -12,11 +13,14 @@ const SupabaseTest = () => {
     try {
       setTestResult('Testing Supabase connection...');
       
-      // Test basic connection
-      const { data, error } = await fetch('/api/health').catch(() => ({ data: null, error: 'Connection failed' }));
+      // Test basic connection by fetching products
+      const { data, error } = await supabase
+        .from('products')
+        .select('id, name')
+        .limit(1);
       
       if (error) {
-        setTestResult(`❌ Connection failed: ${error}`);
+        setTestResult(`❌ Connection failed: ${error.message}`);
         return;
       }
       
