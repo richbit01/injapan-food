@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useProduct, useProducts } from '@/hooks/useProducts';
@@ -6,16 +7,22 @@ import { useCartAnimation } from '@/hooks/useCartAnimation';
 import { ShoppingCart, Truck, Check } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import AddToCartButton from '@/components/AddToCartButton';
 import FlyingProductAnimation from '@/components/FlyingProductAnimation';
+import ProductVariantSelector from '@/components/ProductVariantSelector';
+import { useCart } from '@/hooks/useCart';
+import { toast } from '@/hooks/use-toast';
+import { ProductVariant } from '@/types';
 
 const ProductDetail = () => {
   const { id } = useParams();
   const [quantity, setQuantity] = useState(1);
+  const [selectedVariants, setSelectedVariants] = useState<Record<string, string>>({});
+  const [isVariantSelectionValid, setIsVariantSelectionValid] = useState(false);
   const quantityRef = useRef<HTMLDivElement>(null);
   
   const { data: product, isLoading } = useProduct(id!);
   const { data: allProducts = [] } = useProducts();
+  const { addToCart } = useCart();
   
   const {
     animatingProduct,
@@ -27,21 +34,103 @@ const ProductDetail = () => {
     resetAnimation
   } = useCartAnimation();
 
-  // Scroll to top when component mounts or product changes
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [id]);
 
-  const handleAddToCart = (position: { x: number; y: number }) => {
-    if (product) {
-      // Get cart icon position (approximate)
-      const cartPosition = {
-        x: window.innerWidth - 100, // Approximate cart position
-        y: 80 // Header height
-      };
-      
-      triggerAnimation(product, position, cartPosition);
+  useEffect(() => {
+    // Reset variant selection when product changes
+    setSelectedVariants({});
+    setIsVariantSelectionValid(false);
+  }, [product]);
+
+  const handleVariantChange = (variantName: string, value: string) => {
+    setSelectedVariants(prev => ({
+      ...prev,
+      [variantName]: value
+    }));
+  };
+
+  const getSelectedVariant = (): ProductVariant | null => {
+    if (!product?.variants || product.variants.length === 0) {
+      return null;
     }
+
+    const selectedValues = Object.values(selectedVariants);
+    if (selectedValues.length === 0) {
+      return null;
+    }
+
+    return product.variants.find(variant => {
+      const variantParts = variant.name.split(' - ');
+      return selectedValues.every(selectedValue => 
+        variantParts.some(part => part.includes(selectedValue))
+      );
+    }) || null;
+  };
+
+  const getEffectivePrice = () => {
+    const selectedVariant = getSelectedVariant();
+    return product ? product.price + (selectedVariant?.price || 0) : 0;
+  };
+
+  const getEffectiveStock = () => {
+    const selectedVariant = getSelectedVariant();
+    if (selectedVariant) {
+      return selectedVariant.stock;
+    }
+    return product?.stock || 0;
+  };
+
+  const handleAddToCart = (position: { x: number; y: number }) => {
+    if (!product) return;
+
+    const selectedVariant = getSelectedVariant();
+    const hasVariants = product.variants && product.variants.length > 0;
+
+    // Check if variants are required but not selected
+    if (hasVariants && !isVariantSelectionValid) {
+      toast({
+        title: "Pilih Varian",
+        description: "Silakan pilih varian produk sebelum menambah ke keranjang",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Check stock
+    const effectiveStock = getEffectiveStock();
+    if (effectiveStock < quantity) {
+      toast({
+        title: "Stok Tidak Cukup",
+        description: `Stok tersedia hanya ${effectiveStock}`,
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Create product object with variant information
+    const productToAdd = {
+      ...product,
+      price: getEffectivePrice(),
+      selectedVariants: selectedVariants,
+      selectedVariantName: selectedVariant?.name || null
+    };
+
+    addToCart(productToAdd, quantity);
+    
+    // Trigger animation
+    const cartPosition = {
+      x: window.innerWidth - 100,
+      y: 80
+    };
+    
+    triggerAnimation(product, position, cartPosition);
+
+    toast({
+      title: "Berhasil!",
+      description: `${product.name}${selectedVariant ? ` (${selectedVariant.name})` : ''} ditambahkan ke keranjang`,
+    });
   };
 
   if (isLoading) {
@@ -77,11 +166,14 @@ const ProductDetail = () => {
     .filter(p => p.category === product.category && p.id !== product.id)
     .slice(0, 3);
 
+  const effectiveStock = getEffectiveStock();
+  const effectivePrice = getEffectivePrice();
+  const hasVariants = product.variants && product.variants.length > 0;
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Header shouldAnimateCart={shouldAnimateCart} />
       
-      {/* Flying Product Animation */}
       <FlyingProductAnimation
         product={animatingProduct}
         startPosition={startPosition}
@@ -91,7 +183,6 @@ const ProductDetail = () => {
       />
       
       <div className="container mx-auto px-4 py-8">
-        {/* Breadcrumb */}
         <nav className="flex space-x-2 text-sm text-gray-600 mb-8">
           <Link to="/" className="hover:text-primary">Beranda</Link>
           <span>/</span>
@@ -101,7 +192,6 @@ const ProductDetail = () => {
         </nav>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-16">
-          {/* Product Image */}
           <div className="space-y-4">
             <div className="bg-white rounded-lg overflow-hidden shadow-md">
               <img
@@ -112,7 +202,6 @@ const ProductDetail = () => {
             </div>
           </div>
 
-          {/* Product Info */}
           <div className="space-y-6">
             <div>
               <span className="inline-block bg-secondary text-secondary-foreground px-3 py-1 rounded-full text-sm font-medium mb-3">
@@ -120,7 +209,7 @@ const ProductDetail = () => {
               </span>
               <h1 className="text-3xl font-bold text-gray-900 mb-4">{product.name}</h1>
               <div className="text-4xl font-bold text-primary mb-6">
-                {formatPrice(product.price)}
+                {formatPrice(effectivePrice)}
               </div>
             </div>
 
@@ -129,22 +218,33 @@ const ProductDetail = () => {
               <p className="text-gray-600 leading-relaxed">{product.description}</p>
             </div>
 
-            {/* Stock Status */}
+            {/* Variant Selector */}
+            {hasVariants && (
+              <div className="border-t pt-6">
+                <ProductVariantSelector
+                  category={product.category}
+                  availableVariants={product.variants}
+                  selectedVariants={selectedVariants}
+                  onVariantChange={handleVariantChange}
+                  onValidityChange={setIsVariantSelectionValid}
+                />
+              </div>
+            )}
+
             <div>
               <h3 className="text-lg font-semibold mb-3">Ketersediaan</h3>
               <div className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
-                product.stock > 10 
+                effectiveStock > 10 
                   ? 'bg-green-100 text-green-800' 
-                  : product.stock > 0 
+                  : effectiveStock > 0 
                     ? 'bg-yellow-100 text-yellow-800'
                     : 'bg-red-100 text-red-800'
               }`}>
-                {product.stock > 0 ? `Tersedia (${product.stock})` : 'Stok Habis'}
+                {effectiveStock > 0 ? `Tersedia (${effectiveStock})` : 'Stok Habis'}
               </div>
             </div>
 
-            {/* Quantity Selector */}
-            {product.stock > 0 && (
+            {effectiveStock > 0 && (
               <div ref={quantityRef}>
                 <h3 className="text-lg font-semibold mb-3">Jumlah</h3>
                 <div className="flex items-center space-x-4">
@@ -157,21 +257,21 @@ const ProductDetail = () => {
                     </button>
                     <span className="px-4 py-2 border-x border-gray-300">{quantity}</span>
                     <button
-                      onClick={() => setQuantity(Math.min(product.stock, quantity + 1))}
+                      onClick={() => setQuantity(Math.min(effectiveStock, quantity + 1))}
                       className="px-4 py-2 text-gray-600 hover:text-primary transition-colors"
                     >
                       +
                     </button>
                   </div>
+                  
                   <div className="text-lg font-semibold">
-                    Total: {formatPrice(product.price * quantity)}
+                    Total: {formatPrice(effectivePrice * quantity)}
                   </div>
                 </div>
               </div>
             )}
 
-            {/* Add to Cart Button */}
-            {product.stock > 0 ? (
+            {effectiveStock > 0 ? (
               <button
                 onClick={() => {
                   const rect = quantityRef.current?.getBoundingClientRect();
@@ -182,10 +282,20 @@ const ProductDetail = () => {
                     });
                   }
                 }}
-                className="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white text-lg py-4 rounded-xl font-semibold transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg flex items-center justify-center space-x-3 group"
+                disabled={hasVariants && !isVariantSelectionValid}
+                className={`w-full text-lg py-4 rounded-xl font-semibold transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg flex items-center justify-center space-x-3 group ${
+                  hasVariants && !isVariantSelectionValid
+                    ? 'bg-gray-400 cursor-not-allowed'
+                    : 'bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white'
+                }`}
               >
                 <ShoppingCart className="w-5 h-5 group-hover:animate-bounce" />
-                <span>Tambahkan ke Keranjang</span>
+                <span>
+                  {hasVariants && !isVariantSelectionValid 
+                    ? 'Pilih Varian Terlebih Dahulu' 
+                    : 'Tambahkan ke Keranjang'
+                  }
+                </span>
               </button>
             ) : (
               <button
@@ -197,7 +307,6 @@ const ProductDetail = () => {
               </button>
             )}
 
-            {/* Product Features */}
             <div className="grid grid-cols-2 gap-4 pt-6 border-t border-gray-200">
               <div className="text-center p-6 bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-300">
                 <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
@@ -217,7 +326,6 @@ const ProductDetail = () => {
           </div>
         </div>
 
-        {/* Related Products */}
         {relatedProducts.length > 0 && (
           <div>
             <h2 className="text-2xl font-bold mb-8">Produk Sejenis</h2>

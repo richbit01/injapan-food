@@ -1,4 +1,3 @@
-
 export interface Product {
   id: string;
   name: string;
@@ -11,6 +10,8 @@ export interface Product {
   stock: number;
   status: 'active' | 'inactive' | 'out_of_stock';
   variants: ProductVariant[];
+  selectedVariants?: Record<string, string>;
+  selectedVariantName?: string | null;
 }
 
 export interface ProductVariant {
@@ -35,6 +36,8 @@ export interface CartItem {
     description: string;
     stock: number;
   };
+  selectedVariants?: Record<string, string>;
+  selectedVariantName?: string | null;
 }
 
 export interface Order {

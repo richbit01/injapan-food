@@ -35,7 +35,16 @@ export const useVariantOptions = (category?: string) => {
       }
 
       console.log('Variant options data:', data);
-      return data || [];
+      
+      // Parse the JSON options properly
+      const parsedData = (data || []).map(item => ({
+        ...item,
+        options: Array.isArray(item.options) 
+          ? item.options as string[]
+          : JSON.parse(item.options as string)
+      }));
+
+      return parsedData;
     },
     enabled: true,
   });

@@ -1,4 +1,3 @@
-
 import { CartItem, Product } from '@/types';
 
 export const getCartFromStorage = (): CartItem[] => {
@@ -19,31 +18,46 @@ export const saveCartToStorage = (cart: CartItem[]): void => {
 };
 
 export const addToCart = (product: Product, quantity: number = 1): CartItem[] => {
-  const currentCart = getCartFromStorage();
-  const existingItemIndex = currentCart.findIndex(item => item.product.id === product.id);
-
-  let updatedCart: CartItem[];
+  const cart = getCartFromStorage();
   
-  if (existingItemIndex > -1) {
-    updatedCart = currentCart.map((item, index) => 
-      index === existingItemIndex 
-        ? { ...item, quantity: item.quantity + quantity }
-        : item
-    );
+  // Create a unique identifier for products with variants
+  const productId = product.selectedVariantName 
+    ? `${product.id}-${product.selectedVariantName.replace(/\s+/g, '-')}`
+    : product.id;
+  
+  const existingItemIndex = cart.findIndex(item => item.id === productId);
+  
+  if (existingItemIndex !== -1) {
+    // Update existing item
+    cart[existingItemIndex].quantity += quantity;
   } else {
-    const newItem: CartItem = {
-      id: `cart-${product.id}-${Date.now()}`,
-      name: product.name,
+    // Add new item
+    const cartItem: CartItem = {
+      id: productId,
+      name: product.selectedVariantName 
+        ? `${product.name} (${product.selectedVariantName})`
+        : product.name,
       price: product.price,
+      quantity,
       image_url: product.image_url || '/placeholder.svg',
-      product,
-      quantity
+      product: {
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        image_url: product.image_url || '/placeholder.svg',
+        category: product.category,
+        description: product.description || '',
+        stock: product.stock
+      },
+      selectedVariants: product.selectedVariants || {},
+      selectedVariantName: product.selectedVariantName || null
     };
-    updatedCart = [...currentCart, newItem];
+    
+    cart.push(cartItem);
   }
-
-  saveCartToStorage(updatedCart);
-  return updatedCart;
+  
+  saveCartToStorage(cart);
+  return cart;
 };
 
 export const removeFromCart = (itemId: string): CartItem[] => {

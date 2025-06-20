@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useProduct } from '@/hooks/useProducts';
@@ -13,6 +14,7 @@ import { Save, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { useQueryClient } from '@tanstack/react-query';
+import ProductVariants from '@/components/admin/ProductVariants';
 
 const EditProduct = () => {
   const { id } = useParams<{ id: string }>();
@@ -37,7 +39,9 @@ const EditProduct = () => {
     'Makanan Siap Saji',
     'Bahan Masak Beku',
     'Sayur Segar/Beku',
-    'Sayur Beku'
+    'Sayur Beku',
+    'Kerupuk',
+    'Bon Cabe'
   ];
 
   useEffect(() => {
@@ -51,6 +55,7 @@ const EditProduct = () => {
         stock: product.stock?.toString() || '0'
       });
       setImagePreview(product.image_url);
+      setVariants(product.variants || []);
     }
   }, [product]);
 
@@ -67,7 +72,6 @@ const EditProduct = () => {
     const value = e.target.value;
     console.log('Price input changed to:', value);
     
-    // Allow empty string or valid numbers
     if (value === '' || /^\d+$/.test(value)) {
       handleInputChange('price', value);
     }
@@ -77,7 +81,6 @@ const EditProduct = () => {
     const value = e.target.value;
     console.log('Stock input changed to:', value);
     
-    // Allow empty string or valid numbers
     if (value === '' || /^\d+$/.test(value)) {
       handleInputChange('stock', value);
     }
@@ -98,7 +101,6 @@ const EditProduct = () => {
   const uploadImage = async (): Promise<string | null> => {
     if (!imageFile) return null;
 
-    // Delete old image if it exists and is from our storage
     if (product?.image_url && product.image_url.includes('product-images')) {
       const oldImagePath = product.image_url.split('/').pop();
       if (oldImagePath) {
@@ -141,7 +143,6 @@ const EditProduct = () => {
       return;
     }
 
-    // Validate price and stock are valid numbers
     const priceNum = parseInt(formData.price);
     const stockNum = parseInt(formData.stock);
     
@@ -166,7 +167,6 @@ const EditProduct = () => {
     setLoading(true);
 
     try {
-      // Upload new image if provided
       const imageUrl = await uploadImage();
 
       console.log('Updating product with:', {
@@ -175,10 +175,10 @@ const EditProduct = () => {
         price: priceNum,
         category: formData.category,
         stock: stockNum,
+        variants: variants,
         ...(imageUrl && { image_url: imageUrl })
       });
 
-      // Update product
       const { error } = await supabase
         .from('products')
         .update({
@@ -187,18 +187,17 @@ const EditProduct = () => {
           price: priceNum,
           category: formData.category,
           stock: stockNum,
+          variants: variants,
           ...(imageUrl && { image_url: imageUrl })
         })
         .eq('id', id!);
 
       if (error) throw error;
 
-      // Invalidate and refetch all product-related queries
       await queryClient.invalidateQueries({ queryKey: ['products'] });
       await queryClient.invalidateQueries({ queryKey: ['product', id] });
       await queryClient.invalidateQueries({ queryKey: ['categories'] });
 
-      // Force refetch the specific product
       await queryClient.refetchQueries({ queryKey: ['product', id] });
 
       console.log('Product updated successfully, cache invalidated');
@@ -332,7 +331,6 @@ const EditProduct = () => {
                     value={formData.category} 
                     onValueChange={(value) => {
                       handleInputChange('category', value);
-                      // Reset variants when category changes
                       if (value !== formData.category) {
                         setVariants([]);
                       }
@@ -351,7 +349,6 @@ const EditProduct = () => {
                   </Select>
                 </div>
 
-                {/* Product Variants Section */}
                 <div className="border-t pt-6">
                   <ProductVariants
                     category={formData.category}
