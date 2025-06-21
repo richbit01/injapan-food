@@ -1,139 +1,73 @@
-
 import { useState, useEffect, createContext, useContext } from 'react';
-import { User, Session } from '@supabase/supabase-js';
-import { supabase } from '@/integrations/supabase/client';
 
 interface AuthContextType {
-  user: User | null;
-  session: Session | null;
+  user: any | null;
+  session: any | null;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signUp: (email: string, password: string, fullName: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   loading: boolean;
 }
 
-// Helper function untuk membersihkan auth state
-const cleanupAuthState = () => {
-  // Remove standard auth tokens
-  localStorage.removeItem('supabase.auth.token');
-  // Remove all Supabase auth keys from localStorage
-  Object.keys(localStorage).forEach((key) => {
-    if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
-      localStorage.removeItem(key);
-    }
-  });
-  // Remove from sessionStorage if in use
-  Object.keys(sessionStorage || {}).forEach((key) => {
-    if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
-      sessionStorage.removeItem(key);
-    }
-  });
-};
-
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        console.log('Auth state changed:', event, session?.user?.email);
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
-      }
-    );
-
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
+  const [user, setUser] = useState<any | null>(null);
+  const [session, setSession] = useState<any | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const signIn = async (email: string, password: string) => {
+    setLoading(true);
     try {
-      // Clean up existing state
-      cleanupAuthState();
-      // Attempt global sign out
-      try {
-        await supabase.auth.signOut({ scope: 'global' });
-      } catch (err) {
-        // Continue even if this fails
-        console.log('Sign out cleanup error:', err);
-      }
-
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) {
-        console.log('Sign in error:', error);
-        return { error };
-      }
-
-      if (data.user) {
-        // Force page reload for clean state
-        window.location.href = '/';
-      }
-
+      // Simulate sign in
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Mock user for demo
+      const mockUser = {
+        id: '1',
+        email: email,
+        displayName: email.split('@')[0]
+      };
+      
+      setUser(mockUser);
+      setSession({ user: mockUser });
+      
       return { error: null };
     } catch (error) {
-      console.log('Sign in catch error:', error);
       return { error };
+    } finally {
+      setLoading(false);
     }
   };
 
   const signUp = async (email: string, password: string, fullName: string) => {
+    setLoading(true);
     try {
-      // Clean up existing state first
-      cleanupAuthState();
+      // Simulate sign up
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      const redirectUrl = `${window.location.origin}/`;
+      // Mock user for demo
+      const mockUser = {
+        id: '1',
+        email: email,
+        displayName: fullName
+      };
       
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: redirectUrl,
-          data: {
-            full_name: fullName,
-          }
-        }
-      });
-      return { error };
+      setUser(mockUser);
+      setSession({ user: mockUser });
+      
+      return { error: null };
     } catch (error) {
-      console.log('Sign up error:', error);
       return { error };
+    } finally {
+      setLoading(false);
     }
   };
 
   const signOut = async () => {
-    try {
-      // Clean up auth state
-      cleanupAuthState();
-      // Attempt global sign out
-      try {
-        await supabase.auth.signOut({ scope: 'global' });
-      } catch (err) {
-        // Ignore errors
-        console.log('Sign out error:', err);
-      }
-      // Force page reload for clean state
-      window.location.href = '/auth';
-    } catch (error) {
-      console.log('Sign out catch error:', error);
-      // Force redirect even if sign out fails
-      window.location.href = '/auth';
-    }
+    setUser(null);
+    setSession(null);
+    window.location.href = '/auth';
   };
 
   return (

@@ -1,80 +1,57 @@
-
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { Product, ProductVariant } from '@/types';
+import { useState, useEffect } from 'react';
+import { Product } from '@/types';
+import { sampleProducts } from '@/data/products';
 
 export const useProducts = () => {
-  return useQuery({
-    queryKey: ['products'],
-    queryFn: async (): Promise<Product[]> => {
-      console.log('Fetching products...');
-      
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .order('created_at', { ascending: false });
+  const [products, setProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isError, setIsError] = useState(false);
 
-      if (error) {
-        console.error('Error fetching products:', error);
-        throw error;
-      }
+  useEffect(() => {
+    // Simulate loading
+    setTimeout(() => {
+      setProducts(sampleProducts);
+      setIsLoading(false);
+    }, 500);
+  }, []);
 
-      console.log('Raw products data:', data);
-
-      const products = (data || []).map(product => ({
-        ...product,
-        status: product.status as 'active' | 'inactive' | 'out_of_stock',
-        variants: Array.isArray(product.variants) 
-          ? (product.variants as unknown as ProductVariant[])
-          : []
-      }));
-
-      console.log('Processed products:', products);
-      return products;
-    },
-    staleTime: 0, // Always refetch when cache is invalidated
-    gcTime: 1000 * 60 * 5, // Keep in cache for 5 minutes
-  });
+  return {
+    data: products,
+    isLoading,
+    isError,
+    error: null,
+    refetch: () => {
+      setIsLoading(true);
+      setTimeout(() => {
+        setProducts(sampleProducts);
+        setIsLoading(false);
+      }, 500);
+    }
+  };
 };
 
 export const useProduct = (id: string) => {
-  return useQuery({
-    queryKey: ['product', id],
-    queryFn: async (): Promise<Product | null> => {
-      if (!id) {
-        console.log('No ID provided for useProduct');
-        return null;
-      }
-      
-      console.log('Fetching product with ID:', id);
-      
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .eq('id', id)
-        .single();
+  const [product, setProduct] = useState<Product | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-      if (error) {
-        console.error('Error fetching product:', error);
-        if (error.code === 'PGRST116') {
-          console.log('Product not found for ID:', id);
-          return null; // Product not found
-        }
-        throw error;
-      }
+  useEffect(() => {
+    if (!id) {
+      setIsLoading(false);
+      return;
+    }
 
-      console.log('Found product:', data);
+    // Simulate loading
+    setTimeout(() => {
+      const foundProduct = sampleProducts.find(p => p.id === id);
+      setProduct(foundProduct || null);
+      setIsLoading(false);
+    }, 300);
+  }, [id]);
 
-      return {
-        ...data,
-        status: data.status as 'active' | 'inactive' | 'out_of_stock',
-        variants: Array.isArray(data.variants) 
-          ? (data.variants as unknown as ProductVariant[])
-          : []
-      };
-    },
-    enabled: !!id,
-    staleTime: 0, // Always refetch when cache is invalidated
-    gcTime: 1000 * 60 * 5, // Keep in cache for 5 minutes
-  });
+  return {
+    data: product,
+    isLoading,
+    isError: false,
+    error: null
+  };
 };

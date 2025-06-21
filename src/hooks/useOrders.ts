@@ -1,79 +1,34 @@
-
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { Order, CartItem } from '@/types';
+import { useState, useEffect } from 'react';
+import { Order } from '@/types';
 
 export const useOrders = () => {
-  return useQuery({
-    queryKey: ['orders'],
-    queryFn: async (): Promise<Order[]> => {
-      const { data, error } = await supabase
-        .from('orders')
-        .select('*')
-        .order('created_at', { ascending: false });
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-      if (error) {
-        console.error('Error fetching orders:', error);
-        throw error;
-      }
+  useEffect(() => {
+    // Simulate loading orders
+    setTimeout(() => {
+      setOrders([]); // No orders for demo
+      setIsLoading(false);
+    }, 500);
+  }, []);
 
-      return data?.map(order => ({
-        ...order,
-        items: (order.items as any[]).map(item => ({
-          ...item,
-          product: item.product || {
-            id: item.id || '',
-            name: item.name || '',
-            price: item.price || 0,
-            image_url: item.image_url || '',
-            category: '',
-            description: '',
-            stock: 0
-          }
-        })) as CartItem[],
-        customer_info: order.customer_info as Order['customer_info'],
-        status: order.status as Order['status']
-      })) || [];
-    },
-  });
+  return {
+    data: orders,
+    isLoading,
+    error: null
+  };
 };
 
 export const useCreateOrder = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({
-      items,
-      totalPrice,
-      customerInfo,
-      userId
-    }: {
-      items: CartItem[];
-      totalPrice: number;
-      customerInfo: any;
-      userId?: string;
-    }) => {
-      const { data, error } = await supabase
-        .from('orders')
-        .insert({
-          user_id: userId || null,
-          total_price: totalPrice,
-          customer_info: customerInfo,
-          items: items as any,
-          status: 'pending'
-        })
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Error creating order:', error);
-        throw error;
-      }
-
-      return data;
+  return {
+    mutate: async (orderData: any) => {
+      // Simulate order creation
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      console.log('Order created:', orderData);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['orders'] });
-    },
-  });
+    isPending: false,
+    isError: false,
+    error: null
+  };
 };

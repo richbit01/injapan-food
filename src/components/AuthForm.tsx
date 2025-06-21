@@ -1,6 +1,5 @@
-
 import { useState } from 'react';
-import { useAuth } from '@/hooks/useFirebaseAuth';
+import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,35 +15,6 @@ const AuthForm = () => {
   const { signIn, signUp } = useAuth();
   const { toast } = useToast();
 
-  const getFirebaseErrorMessage = (error: any) => {
-    const errorCode = error?.code || '';
-    
-    switch (errorCode) {
-      case 'auth/invalid-credential':
-      case 'auth/wrong-password':
-      case 'auth/user-not-found':
-        return 'Email atau password yang Anda masukkan salah. Silakan periksa kembali data Anda.';
-      
-      case 'auth/invalid-email':
-        return 'Format email tidak valid. Silakan masukkan alamat email yang benar.';
-      
-      case 'auth/user-disabled':
-        return 'Akun Anda telah dinonaktifkan. Silakan hubungi customer service.';
-      
-      case 'auth/too-many-requests':
-        return 'Terlalu banyak percobaan login. Silakan coba lagi dalam beberapa menit.';
-      
-      case 'auth/email-already-in-use':
-        return 'Email ini sudah terdaftar. Silakan gunakan email lain atau masuk dengan akun yang sudah ada.';
-      
-      case 'auth/weak-password':
-        return 'Password terlalu lemah. Gunakan minimal 6 karakter dengan kombinasi huruf dan angka.';
-      
-      default:
-        return 'Terjadi kesalahan pada sistem. Silakan coba lagi atau hubungi customer service kami jika masalah berlanjut.';
-    }
-  };
-
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -53,25 +23,22 @@ const AuthForm = () => {
       const { error } = await signIn(email, password);
 
       if (error) {
-        const errorMessage = getFirebaseErrorMessage(error);
-        
         toast({
           title: "Login Gagal",
-          description: errorMessage,
+          description: "Email atau password salah",
           variant: "destructive",
         });
       } else {
         toast({
           title: "Login Berhasil",
-          description: "Selamat datang! Anda berhasil masuk ke akun Anda.",
+          description: "Selamat datang!",
         });
         window.location.href = '/';
       }
     } catch (error) {
-      console.error('Sign in error:', error);
       toast({
         title: "Login Gagal",
-        description: "Terjadi kesalahan pada sistem. Silakan coba lagi.",
+        description: "Terjadi kesalahan sistem",
         variant: "destructive",
       });
     } finally {
@@ -87,30 +54,25 @@ const AuthForm = () => {
       const { error } = await signUp(email, password, fullName);
 
       if (error) {
-        const errorMessage = getFirebaseErrorMessage(error);
-        
         toast({
           title: "Pendaftaran Gagal",
-          description: errorMessage,
+          description: "Terjadi kesalahan saat mendaftar",
           variant: "destructive",
         });
       } else {
         toast({
           title: "Pendaftaran Berhasil",
-          description: "Akun Anda berhasil dibuat! Selamat datang di Injapan Food.",
+          description: "Akun berhasil dibuat!",
         });
-        // Clear form
         setEmail('');
         setPassword('');
         setFullName('');
-        // Redirect to home
         window.location.href = '/';
       }
     } catch (error) {
-      console.error('Sign up error:', error);
       toast({
         title: "Pendaftaran Gagal",
-        description: "Terjadi kesalahan pada sistem. Silakan coba lagi.",
+        description: "Terjadi kesalahan sistem",
         variant: "destructive",
       });
     } finally {
