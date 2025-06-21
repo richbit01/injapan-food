@@ -1,26 +1,36 @@
 /*
-  # Safe Schema Update for Injapan Food
+  # Initial Database Schema for Injapan Food
 
-  1. New Tables (only if not exists)
-    - Check and create missing tables safely
-    - Add missing columns to existing tables
-    - Update RLS policies
+  1. New Tables
+    - `products` - Tabel produk dengan varian
+    - `profiles` - Profil pengguna dengan Firebase UID
+    - `orders` - Pesanan pelanggan
+    - `orders_tracking` - Tracking pesanan admin
+    - `admin_logs` - Log aktivitas admin
+    - `recycle_bin` - Soft delete untuk recovery
+    - `variant_options` - Template varian produk
+    - `app_settings` - Pengaturan aplikasi
+    - `settings_history` - Riwayat perubahan pengaturan
+    - `referral_codes` - Kode referral user
+    - `referral_transactions` - Transaksi komisi referral
 
   2. Security
-    - Enable RLS on all tables
-    - Add comprehensive policies for admin and user access
+    - Enable RLS pada semua tabel
+    - Policies untuk admin dan user access
+    - Functions untuk admin check dan referral system
 
-  3. Functions
-    - Create helper functions for admin checks
-    - Add referral system functions
-
-  4. Sample Data
-    - Insert sample products and variant options
-    - Set default app settings
+  3. Sample Data
+    - 12 produk sample dengan varian
+    - Template varian untuk berbagai kategori
+    - App settings default
 */
 
 -- Create extension if not exists
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- ============================================================================
+-- HELPER FUNCTIONS
+-- ============================================================================
 
 -- Helper function to check if user is admin
 CREATE OR REPLACE FUNCTION is_admin()
@@ -34,8 +44,21 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Create products table if not exists
-CREATE TABLE IF NOT EXISTS products (
+-- Trigger function for updated_at
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- ============================================================================
+-- CORE TABLES
+-- ============================================================================
+
+-- Products table
+CREATE TABLE products (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   name text NOT NULL,
   description text,
@@ -49,8 +72,8 @@ CREATE TABLE IF NOT EXISTS products (
   updated_at timestamptz DEFAULT now()
 );
 
--- Create profiles table if not exists
-CREATE TABLE IF NOT EXISTS profiles (
+-- Profiles table
+CREATE TABLE profiles (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   full_name text,
   phone text,
@@ -60,8 +83,8 @@ CREATE TABLE IF NOT EXISTS profiles (
   updated_at timestamptz DEFAULT now()
 );
 
--- Create orders table if not exists
-CREATE TABLE IF NOT EXISTS orders (
+-- Orders table
+CREATE TABLE orders (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid REFERENCES auth.users(id),
   total_price integer NOT NULL,
@@ -72,8 +95,8 @@ CREATE TABLE IF NOT EXISTS orders (
   updated_at timestamptz DEFAULT now()
 );
 
--- Create orders_tracking table if not exists
-CREATE TABLE IF NOT EXISTS orders_tracking (
+-- Orders tracking table
+CREATE TABLE orders_tracking (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   customer_name text NOT NULL,
   customer_email text,
@@ -86,8 +109,12 @@ CREATE TABLE IF NOT EXISTS orders_tracking (
   updated_at timestamptz DEFAULT now()
 );
 
--- Create admin_logs table if not exists
-CREATE TABLE IF NOT EXISTS admin_logs (
+-- ============================================================================
+-- ADMIN TABLES
+-- ============================================================================
+
+-- Admin logs table
+CREATE TABLE admin_logs (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   admin_id uuid REFERENCES auth.users(id),
   action text NOT NULL,
@@ -97,8 +124,8 @@ CREATE TABLE IF NOT EXISTS admin_logs (
   created_at timestamptz DEFAULT now()
 );
 
--- Create recycle_bin table if not exists
-CREATE TABLE IF NOT EXISTS recycle_bin (
+-- Recycle bin table
+CREATE TABLE recycle_bin (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   original_table text NOT NULL,
   original_id uuid NOT NULL,
@@ -107,8 +134,8 @@ CREATE TABLE IF NOT EXISTS recycle_bin (
   deleted_at timestamptz DEFAULT now()
 );
 
--- Create variant_options table if not exists
-CREATE TABLE IF NOT EXISTS variant_options (
+-- Variant options table
+CREATE TABLE variant_options (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   category text NOT NULL,
   variant_name text NOT NULL,
@@ -118,8 +145,17 @@ CREATE TABLE IF NOT EXISTS variant_options (
   updated_at timestamptz DEFAULT now()
 );
 
--- Create settings_history table if not exists
-CREATE TABLE IF NOT EXISTS settings_history (
+-- App settings table
+CREATE TABLE app_settings (
+  id text PRIMARY KEY,
+  value jsonb NOT NULL,
+  description text,
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
+);
+
+-- Settings history table
+CREATE TABLE settings_history (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   setting_id text NOT NULL,
   old_value jsonb,
@@ -129,8 +165,12 @@ CREATE TABLE IF NOT EXISTS settings_history (
   notes text
 );
 
--- Create referral_codes table if not exists
-CREATE TABLE IF NOT EXISTS referral_codes (
+-- ============================================================================
+-- REFERRAL SYSTEM TABLES
+-- ============================================================================
+
+-- Referral codes table
+CREATE TABLE referral_codes (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   code text UNIQUE NOT NULL,
@@ -140,8 +180,8 @@ CREATE TABLE IF NOT EXISTS referral_codes (
   total_commission_earned numeric(10,2) DEFAULT 0
 );
 
--- Create referral_transactions table if not exists
-CREATE TABLE IF NOT EXISTS referral_transactions (
+-- Referral transactions table
+CREATE TABLE referral_transactions (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   referrer_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   referred_user_id uuid REFERENCES auth.users(id) ON DELETE SET NULL,
@@ -155,37 +195,24 @@ CREATE TABLE IF NOT EXISTS referral_transactions (
   confirmed_by uuid REFERENCES profiles(id)
 );
 
--- Add missing columns to existing tables
-DO $$
-BEGIN
-  -- Add firebase_uid to profiles if not exists
-  IF NOT EXISTS (
-    SELECT 1 FROM information_schema.columns 
-    WHERE table_name = 'profiles' AND column_name = 'firebase_uid'
-  ) THEN
-    ALTER TABLE profiles ADD COLUMN firebase_uid text UNIQUE;
-  END IF;
+-- ============================================================================
+-- INDEXES
+-- ============================================================================
 
-  -- Add variants to products if not exists
-  IF NOT EXISTS (
-    SELECT 1 FROM information_schema.columns 
-    WHERE table_name = 'products' AND column_name = 'variants'
-  ) THEN
-    ALTER TABLE products ADD COLUMN variants jsonb DEFAULT '[]'::jsonb;
-  END IF;
-END $$;
+CREATE INDEX idx_products_category ON products(category);
+CREATE INDEX idx_products_status ON products(status);
+CREATE INDEX idx_orders_status ON orders(status);
+CREATE INDEX idx_profiles_firebase_uid ON profiles(firebase_uid);
+CREATE INDEX idx_referral_codes_code ON referral_codes(code);
+CREATE INDEX idx_referral_codes_user_id ON referral_codes(user_id);
+CREATE INDEX idx_referral_codes_active ON referral_codes(is_active);
+CREATE INDEX idx_referral_transactions_referrer ON referral_transactions(referrer_id);
+CREATE INDEX idx_referral_transactions_order ON referral_transactions(order_id);
+CREATE INDEX idx_referral_transactions_status ON referral_transactions(status);
 
--- Create indexes
-CREATE INDEX IF NOT EXISTS idx_products_category ON products(category);
-CREATE INDEX IF NOT EXISTS idx_products_status ON products(status);
-CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);
-CREATE INDEX IF NOT EXISTS idx_profiles_firebase_uid ON profiles(firebase_uid);
-CREATE INDEX IF NOT EXISTS idx_referral_codes_code ON referral_codes(code);
-CREATE INDEX IF NOT EXISTS idx_referral_codes_user_id ON referral_codes(user_id);
-CREATE INDEX IF NOT EXISTS idx_referral_codes_active ON referral_codes(is_active);
-CREATE INDEX IF NOT EXISTS idx_referral_transactions_referrer ON referral_transactions(referrer_id);
-CREATE INDEX IF NOT EXISTS idx_referral_transactions_order ON referral_transactions(order_id);
-CREATE INDEX IF NOT EXISTS idx_referral_transactions_status ON referral_transactions(status);
+-- ============================================================================
+-- ROW LEVEL SECURITY
+-- ============================================================================
 
 -- Enable RLS on all tables
 ALTER TABLE products ENABLE ROW LEVEL SECURITY;
@@ -195,18 +222,14 @@ ALTER TABLE orders_tracking ENABLE ROW LEVEL SECURITY;
 ALTER TABLE admin_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE recycle_bin ENABLE ROW LEVEL SECURITY;
 ALTER TABLE variant_options ENABLE ROW LEVEL SECURITY;
+ALTER TABLE app_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE settings_history ENABLE ROW LEVEL SECURITY;
 ALTER TABLE referral_codes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE referral_transactions ENABLE ROW LEVEL SECURITY;
 
--- Drop existing policies if they exist and recreate
-DROP POLICY IF EXISTS "Anyone can view products" ON products;
-DROP POLICY IF EXISTS "Admins can manage products" ON products;
-DROP POLICY IF EXISTS "Users see own profile" ON profiles;
-DROP POLICY IF EXISTS "Users update own profile" ON profiles;
-DROP POLICY IF EXISTS "Allow read access to profiles" ON profiles;
-DROP POLICY IF EXISTS "Allow profile creation" ON profiles;
-DROP POLICY IF EXISTS "Allow profile updates" ON profiles;
+-- ============================================================================
+-- POLICIES
+-- ============================================================================
 
 -- Products policies
 CREATE POLICY "Anyone can view products" ON products FOR SELECT TO public USING (true);
@@ -260,17 +283,9 @@ CREATE POLICY "Admins can delete from recycle bin" ON recycle_bin FOR DELETE TO 
 -- Variant options policies
 CREATE POLICY "Admin can manage variant options" ON variant_options FOR ALL TO public USING (true);
 
--- App settings policies (only if table exists)
-DO $$
-BEGIN
-  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'app_settings') THEN
-    DROP POLICY IF EXISTS "Anyone can view app settings" ON app_settings;
-    DROP POLICY IF EXISTS "Only admins can update app settings" ON app_settings;
-    
-    CREATE POLICY "Anyone can view app settings" ON app_settings FOR SELECT TO public USING (true);
-    CREATE POLICY "Only admins can update app settings" ON app_settings FOR UPDATE TO public USING (is_admin());
-  END IF;
-END $$;
+-- App settings policies
+CREATE POLICY "Anyone can view app settings" ON app_settings FOR SELECT TO public USING (true);
+CREATE POLICY "Only admins can update app settings" ON app_settings FOR UPDATE TO public USING (is_admin());
 
 -- Settings history policies
 CREATE POLICY "Only admins can view settings history" ON settings_history FOR SELECT TO public USING (is_admin());
@@ -286,53 +301,39 @@ CREATE POLICY "Anyone can view active referral codes for validation" ON referral
 CREATE POLICY "Users can view their own referral transactions" ON referral_transactions FOR SELECT TO public USING (auth.uid() = referrer_id);
 CREATE POLICY "System can create referral transactions" ON referral_transactions FOR INSERT TO public WITH CHECK (true);
 
--- Create trigger function for updated_at
-CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
-BEGIN
-  NEW.updated_at = now();
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
+-- ============================================================================
+-- TRIGGERS
+-- ============================================================================
 
 -- Add triggers for updated_at
-DROP TRIGGER IF EXISTS update_products_updated_at ON products;
 CREATE TRIGGER update_products_updated_at
   BEFORE UPDATE ON products
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-DROP TRIGGER IF EXISTS update_profiles_updated_at ON profiles;
 CREATE TRIGGER update_profiles_updated_at
   BEFORE UPDATE ON profiles
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-DROP TRIGGER IF EXISTS update_orders_updated_at ON orders;
 CREATE TRIGGER update_orders_updated_at
   BEFORE UPDATE ON orders
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-DROP TRIGGER IF EXISTS update_orders_tracking_updated_at ON orders_tracking;
 CREATE TRIGGER update_orders_tracking_updated_at
   BEFORE UPDATE ON orders_tracking
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-DROP TRIGGER IF EXISTS update_variant_options_updated_at ON variant_options;
 CREATE TRIGGER update_variant_options_updated_at
   BEFORE UPDATE ON variant_options
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
--- Add trigger for app_settings if table exists
-DO $$
-BEGIN
-  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'app_settings') THEN
-    DROP TRIGGER IF EXISTS update_app_settings_updated_at ON app_settings;
-    CREATE TRIGGER update_app_settings_updated_at
-      BEFORE UPDATE ON app_settings
-      FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-  END IF;
-END $$;
+CREATE TRIGGER update_app_settings_updated_at
+  BEFORE UPDATE ON app_settings
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
--- Referral system functions
+-- ============================================================================
+-- REFERRAL SYSTEM FUNCTIONS
+-- ============================================================================
+
 CREATE OR REPLACE FUNCTION increment_referral_stats(referral_code text, commission_amount numeric)
 RETURNS void AS $$
 BEGIN
@@ -368,23 +369,24 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Insert default app settings only if table exists and setting doesn't exist
-DO $$
-BEGIN
-  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'app_settings') THEN
-    INSERT INTO app_settings (id, value, description) 
-    VALUES ('referral_commission_rate', '{"rate": 3}', 'Persentase komisi referral (dalam persen)')
-    ON CONFLICT (id) DO NOTHING;
-  END IF;
-END $$;
+-- ============================================================================
+-- DEFAULT DATA
+-- ============================================================================
 
--- Insert sample variant options
+-- Insert default app settings
+INSERT INTO app_settings (id, value, description) VALUES
+('referral_commission_rate', '{"rate": 3}', 'Persentase komisi referral (dalam persen)'),
+('site_name', '{"name": "Injapan Food"}', 'Nama website'),
+('contact_whatsapp', '{"number": "+6285155452259"}', 'Nomor WhatsApp customer service'),
+('shipping_info', '{"text": "Pengiriman ke seluruh Jepang 2-5 hari kerja"}', 'Informasi pengiriman');
+
+-- Insert variant options templates
 INSERT INTO variant_options (category, variant_name, options, is_required) VALUES
 ('Kerupuk', 'rasa', '["Original", "Pedas", "BBQ", "Balado", "Keju"]', true),
 ('Kerupuk', 'gram', '["100g", "250g", "500g", "1kg"]', true),
 ('Bon Cabe', 'level', '["10", "30", "50"]', true),
 ('Bon Cabe', 'gram', '["40g", "80g", "160g"]', true),
-('Makanan Ringan', 'rasa', '["Original", "Pedas", "BBQ", "Balado", "Keju", "Jagung Bakar"]', false),
+('Makanan Ringan',  'rasa', '["Original", "Pedas", "BBQ", "Balado", "Keju", "Jagung Bakar"]', false),
 ('Makanan Ringan', 'gram', '["100g", "250g", "500g"]', false),
 ('Bumbu Dapur', 'kemasan', '["Sachet", "Botol", "Pouch"]', false),
 ('Bumbu Dapur', 'gram', '["20g", "40g", "80g", "160g", "250g"]', false),
@@ -399,8 +401,7 @@ INSERT INTO variant_options (category, variant_name, options, is_required) VALUE
 ('Sayur Segar/Beku', 'kemasan', '["Plastik", "Styrofoam"]', false),
 ('Sayur Beku', 'kondisi', '["Utuh", "Potong", "Cuci Bersih"]', false),
 ('Sayur Beku', 'berat', '["250g", "500g", "1kg"]', false),
-('Sayur Beku', 'kemasan', '["Plastik", "Vacuum"]', false)
-ON CONFLICT DO NOTHING;
+('Sayur Beku', 'kemasan', '["Plastik", "Vacuum"]', false);
 
 -- Insert sample products
 INSERT INTO products (name, description, price, category, image_url, stock, status, variants) VALUES
@@ -415,5 +416,4 @@ INSERT INTO products (name, description, price, category, image_url, stock, stat
 ('Daun Singkong Frozen', 'Daun singkong beku yang siap diolah menjadi berbagai masakan lezat.', 380, 'Sayur Beku', 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg', 4, 'active', '[]'),
 ('Daun Pepaya', 'Daun pepaya segar untuk lalapan atau direbus sebagai sayuran sehat.', 280, 'Sayur Segar/Beku', 'https://images.pexels.com/photos/1435904/pexels-photo-1435904.jpeg', 14, 'inactive', '[]'),
 ('Sambal Terasi Pedas', 'Sambal terasi autentik dengan rasa pedas yang menggugah selera.', 450, 'Bumbu Dapur', 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg', 20, 'active', '[]'),
-('Rendang Instant', 'Rendang siap saji dengan bumbu rempah pilihan, cita rasa autentik Padang.', 850, 'Makanan Siap Saji', 'https://images.pexels.com/photos/1435904/pexels-photo-1435904.jpeg', 8, 'active', '[]')
-ON CONFLICT DO NOTHING;
+('Rendang Instant', 'Rendang siap saji dengan bumbu rempah pilihan, cita rasa autentik Padang.', 850, 'Makanan Siap Saji', 'https://images.pexels.com/photos/1435904/pexels-photo-1435904.jpeg', 8, 'active', '[]');
