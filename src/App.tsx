@@ -1,4 +1,3 @@
-
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/toaster';
@@ -12,6 +11,7 @@ import Auth from '@/pages/Auth';
 import Orders from '@/pages/Orders';
 import HowToBuy from '@/pages/HowToBuy';
 import NotFound from '@/pages/NotFound';
+import DatabaseSetup from '@/pages/DatabaseSetup';
 
 // Admin pages
 import Admin from '@/pages/Admin';
@@ -45,6 +45,9 @@ function App() {
         <LanguageProvider>
           <Router>
             <Routes>
+              {/* Database setup route */}
+              <Route path="/setup-database" element={<DatabaseSetup />} />
+              
               {/* Public routes */}
               <Route path="/" element={<Index />} />
               <Route path="/products" element={<Products />} />
